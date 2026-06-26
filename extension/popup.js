@@ -6,41 +6,81 @@ const BOT_USERNAME   = 'SubmanagerAgentBot';
 const PROJECT_WALLET = '0xA6F46Dcaa07C6b56D02379Ec3b2AafDFe3BA0DfA';
 
 // ── Web3Auth ──────────────────────────────────────────────────────────────────
-const WEB3AUTH_LOGIN_PAGE = chrome.runtime.getURL('web3auth-login.html');
-let   web3authTab         = null;
+const IS_EXTENSION = !!(
+  typeof chrome !== 'undefined' && chrome.runtime && typeof chrome.runtime.getURL === 'function'
+);
+const WEB3AUTH_LOGIN_PAGE = IS_EXTENSION
+  ? chrome.runtime.getURL('web3auth-login.html')
+  : '/web3auth-login.html';
 
-function getW3AUserId() {
-  return new Promise(resolve => {
-    chrome.storage.local.get('web3auth', d => {
-      const w3a = d.web3auth;
-      if (w3a?.idToken && w3a?.verifierId) {
-        resolve(`w3a:${w3a.verifier}:${w3a.verifierId}`);
-      } else {
-        resolve(null);
-      }
-    });
-  });
+// Unified storage helpers — chrome.storage in extension, localStorage on web
+function w3aGet(cb) {
+  if (IS_EXTENSION) {
+    chrome.storage.local.get('web3auth', d => cb(d.web3auth || null));
+  } else {
+    try { cb(JSON.parse(localStorage.getItem('web3auth'))); } catch { cb(null); }
+  }
+}
+function w3aSet(data, cb) {
+  if (IS_EXTENSION) {
+    chrome.storage.local.set({ web3auth: data }, cb);
+  } else {
+    localStorage.setItem('web3auth', JSON.stringify(data));
+    if (cb) cb();
+  }
+}
+function w3aRemove(cb) {
+  if (IS_EXTENSION) {
+    chrome.storage.local.remove('web3auth', cb);
+  } else {
+    localStorage.removeItem('web3auth');
+    if (cb) cb();
+  }
 }
 
 function openWeb3AuthTab() {
-  chrome.tabs.create({ url: WEB3AUTH_LOGIN_PAGE, active: true }, tab => {
-    web3authTab = tab.id;
-  });
+  if (IS_EXTENSION) {
+    chrome.tabs.create({ url: WEB3AUTH_LOGIN_PAGE, active: true });
+  } else {
+    window.open(WEB3AUTH_LOGIN_PAGE, 'web3auth_login', 'width=480,height=640,left=200,top=100');
+  }
 
-  // Poll chrome.storage for the login result (set by web3auth-login.html)
-  const checkInterval = setInterval(async () => {
-    const data = await new Promise(r => chrome.storage.local.get('web3auth', r));
-    const w3a  = data.web3auth;
-    if (w3a?.idToken && w3a?.loginAt && (Date.now() - w3a.loginAt) < 30000) {
-      clearInterval(checkInterval);
-      renderW3AStatus(w3a);
-      // Verify the token server-side and load data
-      await syncWeb3AuthUser(w3a);
-    }
-  }, 800);
+  // Listen for the result via BroadcastChannel (web) or storage polling (extension)
+  if (!IS_EXTENSION) {
+    const handleW3AResult = async w3a => {
+      if (!w3a?.idToken) return;
+      w3aSet(w3a, async () => {
+        renderW3AStatus(w3a);
+        await syncWeb3AuthUser(w3a);
+      });
+    };
 
-  // Stop polling after 3 minutes (user abandoned login)
-  setTimeout(() => clearInterval(checkInterval), 180000);
+    // Primary: BroadcastChannel
+    const bc = new BroadcastChannel('web3auth_result');
+    bc.onmessage = e => { bc.close(); handleW3AResult(e.data); };
+    setTimeout(() => bc.close(), 180000);
+
+    // Fallback: postMessage from popup window
+    const onMsg = e => {
+      if (e.data?.type === 'web3auth_result') {
+        window.removeEventListener('message', onMsg);
+        handleW3AResult(e.data.data);
+      }
+    };
+    window.addEventListener('message', onMsg);
+  } else {
+    // Extension: popup stays open; poll chrome.storage for the result
+    const checkInterval = setInterval(() => {
+      w3aGet(w3a => {
+        if (w3a?.idToken && w3a?.loginAt && (Date.now() - w3a.loginAt) < 30000) {
+          clearInterval(checkInterval);
+          renderW3AStatus(w3a);
+          syncWeb3AuthUser(w3a);
+        }
+      });
+    }, 800);
+    setTimeout(() => clearInterval(checkInterval), 180000);
+  }
 }
 
 function renderW3AStatus(w3a) {
@@ -113,7 +153,7 @@ async function syncWeb3AuthUser(w3a) {
 }
 
 async function web3authLogout() {
-  chrome.storage.local.remove('web3auth', () => {
+  w3aRemove(() => {
     renderW3AStatus(null);
     state.telegramUserId = null;
     state.subscriptions  = [];
@@ -589,7 +629,7 @@ function renderTxHistory() {
 // ── Settings ──────────────────────────────────────────────────────────────
 function refreshSettings() {
   // Web3Auth status
-  chrome.storage.local.get('web3auth', d => renderW3AStatus(d.web3auth || null));
+  w3aGet(w3a => renderW3AStatus(w3a));
 
   const tgId = state.telegramUserId;
   const isTgId = tgId && !tgId.startsWith('w3a:');
@@ -715,7 +755,7 @@ function resetBot() {
   if (confirm('Reset all SubBot data? This cannot be undone.')) {
     state = { telegramUserId: null, subscriptions: [], budget: 100, balance: 0, txHistory: [] };
     saveState();
-    chrome.storage.local.remove('web3auth', () => {
+    w3aRemove(() => {
       renderW3AStatus(null);
       showScreen('welcome');
     });
@@ -746,9 +786,8 @@ async function init() {
   document.querySelectorAll('.project-addr-short').forEach(el => el.textContent = shortAddr(PROJECT_WALLET));
 
   // Load Web3Auth state — clear if token is older than 23h (tokens expire at 24h)
-  const w3aData = await new Promise(r => chrome.storage.local.get('web3auth', r));
-  const w3a     = w3aData.web3auth;
   const TOKEN_TTL = 23 * 60 * 60 * 1000;
+  const w3a = await new Promise(r => w3aGet(r));
   if (w3a?.idToken && (Date.now() - (w3a.loginAt || 0)) < TOKEN_TTL) {
     renderW3AStatus(w3a);
     if (!state.telegramUserId || state.telegramUserId.startsWith('w3a:')) {
@@ -758,10 +797,7 @@ async function init() {
       return;
     }
   } else {
-    if (w3a?.idToken) {
-      // Token expired — clear it silently
-      chrome.storage.local.remove('web3auth');
-    }
+    if (w3a?.idToken) w3aRemove(); // expired — clear silently
     renderW3AStatus(null);
   }
 
