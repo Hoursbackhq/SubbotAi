@@ -3,46 +3,39 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SubBot — AI Subscription Manager</title>
+<title>SubBot</title>
 <script src="tailwind.js"></script>
 <script src="tailwind-config.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 <style>
-  html, body { margin:0; padding:0; height:100%; background:#0a0e14; }
-  body { font-family:'Inter',sans-serif; color:#dfe2eb; display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  #app { position:relative; width:min(400px,100vw); height:100svh; max-height:min(100svh,720px); min-height:580px; overflow:hidden; background:#10141a; }
-  .screen { display:none; width:100%; height:100%; flex-direction:column; position:relative; }
-  .screen.active { display:flex; }
-  .screen-scroll { overflow-y:auto; flex:1; max-height:calc(100% - 52px - 56px); }
-  .screen-scroll::-webkit-scrollbar { width:4px; }
-  .screen-scroll::-webkit-scrollbar-thumb { background:#31353c; border-radius:10px; }
-  .material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
-  .glass { background:rgba(28,32,38,0.7); backdrop-filter:blur(12px); }
-  .gold-border { border:1px solid rgba(251,191,36,0.3); }
-  .amber-glow { box-shadow:0 0 15px rgba(251,191,36,0.15); }
-  .pulse-dot { animation:pulse-anim 2s cubic-bezier(0.4,0,0.6,1) infinite; }
-  @keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.2);} }
-  .logo-glow { filter:drop-shadow(0 0 15px rgba(34,211,238,0.4)); }
-  .signature-glow { background:linear-gradient(135deg,#22d3ee 0%,#00cbe6 100%); box-shadow:0 0 20px rgba(34,211,238,0.3); }
-  #toast { position:absolute; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px); background:#1c2026; border:1px solid #464554; color:#dfe2eb; padding:8px 16px; border-radius:999px; font-size:12px; opacity:0; transition:all 0.3s; pointer-events:none; z-index:200; white-space:nowrap; }
-  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  .modal-overlay { display:none; position:absolute; inset:0; z-index:100; background:rgba(10,14,20,0.8); backdrop-filter:blur(4px); align-items:flex-end; justify-content:center; padding:16px; }
-  .modal-overlay.active { display:flex; }
-  .nav-tab { display:flex; flex-direction:column; align-items:center; justify-content:center; color:#64748b; cursor:pointer; padding:4px 8px; border-radius:12px; transition:all 0.15s; }
-  .nav-tab.active-tab { color:#22d3ee; background:rgba(34,211,238,0.1); }
-  .nav-tab span.label { font-size:10px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; }
-  @media (min-width:420px) {
-    body { background:#0a0e14; }
-    #app { border-radius:24px; box-shadow:0 0 60px rgba(34,211,238,0.08), 0 0 0 1px rgba(255,255,255,0.05); }
-  }
+  body{font-family:'Inter',sans-serif;background:#10141a;color:#dfe2eb;width:400px;min-height:580px;max-height:580px;overflow:hidden;margin:0;}
+  .screen{display:none;width:400px;min-height:580px;flex-direction:column;position:relative;}
+  .screen.active{display:flex;}
+  .screen-scroll{overflow-y:auto;flex:1;max-height:calc(580px - 52px - 56px);}
+  .screen-scroll::-webkit-scrollbar{width:4px;}
+  .screen-scroll::-webkit-scrollbar-thumb{background:#31353c;border-radius:10px;}
+  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}
+  .glass{background:rgba(28,32,38,0.7);backdrop-filter:blur(12px);}
+  .gold-border{border:1px solid rgba(251,191,36,0.3);}
+  .amber-glow{box-shadow:0 0 15px rgba(251,191,36,0.15);}
+  .pulse-dot{animation:pulse-anim 2s cubic-bezier(0.4,0,0.6,1) infinite;}
+  @keyframes pulse-anim{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.2);}}
+  .logo-glow{filter:drop-shadow(0 0 15px rgba(34,211,238,0.4));}
+  .signature-glow{background:linear-gradient(135deg,#22d3ee 0%,#00cbe6 100%);box-shadow:0 0 20px rgba(34,211,238,0.3);}
+  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1c2026;border:1px solid #464554;color:#dfe2eb;padding:8px 16px;border-radius:999px;font-size:12px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:200;}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+  .modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(10,14,20,0.8);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;padding:16px;}
+  .modal-overlay.active{display:flex;}
+  .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#64748b;cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.15s;}
+  .nav-tab.active-tab{color:#22d3ee;background:rgba(34,211,238,0.1);}
+  .nav-tab span.label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;}
 </style>
 </head>
 <body>
-<div id="app">
 
 <!-- SHARED HEADER -->
-<header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center px-4 bg-slate-900/70 backdrop-blur-xl border-b border-white/5 h-[52px] shadow-[0_0_20px_rgba(34,211,238,0.15)]">
+<header id="app-header" class="hidden fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 bg-slate-900/70 backdrop-blur-xl border-b border-white/5 h-[52px] shadow-[0_0_20px_rgba(34,211,238,0.15)]">
   <div class="flex items-center gap-2 text-cyan-400 font-bold">
     <span class="material-symbols-outlined">smart_toy</span>
     <span class="font-semibold text-lg tracking-tight">SubBot</span>
@@ -55,7 +48,7 @@
 </header>
 
 <!-- SHARED BOTTOM NAV -->
-<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 flex justify-around items-center px-1 pb-2 pt-1 bg-slate-900/80 backdrop-blur-lg border-t border-white/5 shadow-2xl rounded-t-xl h-[56px]">
+<nav id="app-nav" class="hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-1 pb-2 pt-1 bg-slate-900/80 backdrop-blur-lg border-t border-white/5 shadow-2xl rounded-t-xl h-[56px]">
   <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard">
     <span class="material-symbols-outlined">dashboard</span><span class="label">Dash</span>
   </div>
@@ -79,7 +72,7 @@
 <div id="screen-welcome" class="screen active bg-surface">
   <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[80px]"></div>
   <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/5 rounded-full blur-[80px]"></div>
-  <div class="flex-1 flex flex-col items-center justify-between px-8 py-6 z-10 overflow-y-auto" style="max-height:100%;">
+  <div class="flex-1 flex flex-col items-center justify-between px-8 py-6 z-10 overflow-y-auto" style="max-height:580px;">
     <div class="w-full flex flex-col items-center text-center mt-4">
       <div class="mb-6">
         <div class="w-20 h-20 bg-surface-container rounded-3xl flex items-center justify-center logo-glow border border-primary/20">
@@ -118,13 +111,44 @@
 
 <!-- SCREEN: SETUP (pair with Telegram bot) -->
 <div id="screen-setup" class="screen bg-surface">
-  <div class="flex-1 flex flex-col px-8 py-8 space-y-6 overflow-y-auto" style="max-height:100%;">
+  <div class="flex-1 flex flex-col px-8 py-8 space-y-6 overflow-y-auto" style="max-height:580px;">
     <div class="text-center">
       <div class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center logo-glow border border-primary/20 mx-auto mb-4">
         <span class="material-symbols-outlined text-[36px] text-primary">send</span>
       </div>
       <h1 class="text-2xl font-bold">Connect Your Bot</h1>
-      <p class="text-on-surface-variant text-sm mt-2 leading-relaxed">The dashboard shows data from your Telegram bot. Connect once and it syncs automatically.</p>
+      <p class="text-on-surface-variant text-sm mt-2 leading-relaxed">The extension shows data from your Telegram bot. Connect once and it syncs automatically.</p>
+    </div>
+
+    <!-- Web3Auth Login Option -->
+    <div class="glass rounded-2xl p-4 border border-cyan-500/20 space-y-3">
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-[10px] font-bold uppercase tracking-widest text-cyan-400">✦ Web3Auth</span>
+        <span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Recommended</span>
+      </div>
+      <p class="text-[11px] text-on-surface-variant leading-snug">Sign in with Google, Twitter, Discord, or email. No seed phrases needed.</p>
+      <button id="w3a-login-btn" data-action="web3authLogin" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+        <span class="material-symbols-outlined text-sm">lock_open</span>Login with Web3Auth
+      </button>
+      <!-- Shows after login -->
+      <div id="w3a-status" class="hidden items-center gap-3 p-3 bg-surface-container rounded-xl border border-outline-variant/10">
+        <div id="w3a-avatar" class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">?</div>
+        <div class="flex-1 min-w-0">
+          <p id="w3a-name" class="text-xs font-semibold truncate">—</p>
+          <p id="w3a-email" class="text-[10px] text-on-surface-variant truncate">—</p>
+        </div>
+        <button data-action="web3authLogout" class="text-error/60 hover:text-error text-[10px]">Sign out</button>
+      </div>
+      <button id="w3a-dashboard-btn" data-action="web3authDashboard" class="hidden w-full py-3 rounded-xl signature-glow text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+        Open Dashboard <span class="material-symbols-outlined">arrow_forward</span>
+      </button>
+    </div>
+
+    <!-- Divider -->
+    <div class="flex items-center gap-3 text-on-surface-variant text-[11px]">
+      <div class="flex-1 h-px bg-outline-variant/20"></div>
+      <span>or pair with Telegram</span>
+      <div class="flex-1 h-px bg-outline-variant/20"></div>
     </div>
 
     <div class="glass rounded-2xl p-5 border border-outline-variant/10 space-y-4">
@@ -218,7 +242,7 @@
     </div>
     <div id="subs-list" class="px-4 space-y-2 pb-4"><div class="text-xs text-on-surface-variant text-center py-6">No subscriptions yet — tap <strong class="text-primary">+</strong> below to add yours.</div></div>
   </div>
-  <button data-action="addSub" class="absolute bottom-16 right-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 text-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.4)] flex items-center justify-center active:scale-90 z-40"><span class="material-symbols-outlined text-3xl">add</span></button>
+  <button data-action="addSub" class="fixed bottom-16 right-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 text-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.4)] flex items-center justify-center active:scale-90 z-40"><span class="material-symbols-outlined text-3xl">add</span></button>
 </div>
 
 <!-- SCREEN: AUDIT -->
@@ -269,98 +293,60 @@
 
 <!-- SCREEN: CREDITS -->
 <div id="screen-credits" class="screen bg-surface">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
-
-    <!-- Vault hero card -->
-    <div id="vault-card" class="relative w-full rounded-2xl overflow-hidden gold-border p-5 flex flex-col gap-3 amber-glow bg-gradient-to-br from-surface-container-high to-surface-container-lowest mt-2">
-      <div class="flex justify-between items-center">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
+    <!-- Balance card -->
+    <div class="relative w-full rounded-xl overflow-hidden gold-border p-5 flex flex-col justify-between amber-glow bg-gradient-to-br from-surface-container-high to-surface-container-lowest mt-2" style="min-height:120px;">
+      <div class="flex justify-between items-start">
         <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center">
-            <span class="material-symbols-outlined text-amber-500 text-lg" style="font-variation-settings:'FILL' 1">savings</span>
-          </div>
-          <span class="text-xs font-mono text-amber-500 uppercase tracking-widest">SubBot Vault · Celo</span>
-        </div>
-        <span id="vault-status-badge" class="hidden text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">● Self-sustaining</span>
-      </div>
-
-      <!-- Three stats -->
-      <div class="grid grid-cols-3 gap-2 mt-1">
-        <div class="bg-black/20 rounded-xl p-3 text-center">
-          <p class="text-[9px] text-on-surface-variant uppercase tracking-widest mb-1">Principal</p>
-          <p id="vault-principal" class="text-base font-bold font-mono text-on-surface leading-none">—</p>
-          <p class="text-[9px] text-amber-500 mt-0.5">cUSD · locked</p>
-        </div>
-        <div class="bg-black/20 rounded-xl p-3 text-center">
-          <p class="text-[9px] text-on-surface-variant uppercase tracking-widest mb-1">Yield Earned</p>
-          <p id="vault-yield" class="text-base font-bold font-mono text-emerald-400 leading-none">—</p>
-          <p class="text-[9px] text-on-surface-variant mt-0.5">10% APY</p>
-        </div>
-        <div class="bg-black/20 rounded-xl p-3 text-center">
-          <p class="text-[9px] text-on-surface-variant uppercase tracking-widest mb-1">Credits</p>
-          <p id="vault-credits" class="text-base font-bold font-mono text-primary leading-none">—</p>
-          <p class="text-[9px] text-on-surface-variant mt-0.5">spendable</p>
+          <div class="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center"><span class="material-symbols-outlined text-amber-500 text-lg" style="font-variation-settings:'FILL' 1">token</span></div>
+          <span class="text-xs font-mono text-amber-500 uppercase tracking-widest">Celo Mainnet · cUSD</span>
         </div>
       </div>
-
-      <p id="vault-tagline" class="text-[10px] text-on-surface-variant text-center leading-snug">
-        Deposit once — yield pays for all operations. Principal never touched.
-      </p>
+      <div class="mt-3">
+        <span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Your Balance</span>
+        <div class="flex items-baseline gap-2"><h1 id="credits-balance" class="text-3xl font-bold font-mono leading-none">0.00</h1><span class="text-amber-500 font-mono font-medium">cUSD</span></div>
+      </div>
+      <p class="text-[10px] text-on-surface-variant mt-2">Managed by your Telegram bot · syncs automatically</p>
     </div>
 
-    <!-- Deposit section -->
+    <!-- How to top up -->
     <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-amber-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Deposit to Vault</h2></div>
-      <div class="glass border border-outline-variant/10 rounded-2xl p-4 space-y-3">
-        <p class="text-[11px] text-on-surface-variant leading-snug">
-          Send cUSD to the vault contract from <span class="text-primary font-semibold">MiniPay</span> or <span class="text-primary font-semibold">Valora</span>, then tell your bot <code class="font-mono text-primary">/deposit confirmed</code>.
-        </p>
-        <p class="text-[10px] text-on-surface-variant leading-snug">
-          Just <span class="text-on-surface font-semibold">5 cUSD</span> is enough — Aave yield covers all operations. Principal never touched.
-        </p>
-        <div class="flex items-center gap-2 p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl">
-          <code id="vault-addr" class="text-[10px] font-mono text-secondary flex-1 truncate">Loading…</code>
-          <button data-action="copyVaultAddr" class="text-on-surface-variant hover:text-primary flex-shrink-0"><span class="material-symbols-outlined text-lg">content_copy</span></button>
+      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-amber-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">How to Top Up</h2></div>
+      <div class="glass border border-outline-variant/10 rounded-2xl p-5 flex flex-col items-center gap-4">
+        <div class="bg-white p-3 rounded-2xl shadow-lg"><canvas id="credits-qr" width="140" height="140"></canvas></div>
+        <div class="w-full space-y-2">
+          <p class="text-[11px] text-on-surface-variant text-center leading-snug">Send any amount of <span class="text-on-surface font-semibold">cUSD</span> from <span class="text-primary">MiniPay</span> or <span class="text-primary">Valora</span> to this address, then confirm with your bot.</p>
+          <div class="flex items-center gap-2 p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl">
+            <code id="qr-addr" class="text-[10px] font-mono text-secondary flex-1 truncate">—</code>
+            <button data-action="copyProjectAddr" class="text-on-surface-variant hover:text-primary flex-shrink-0"><span class="material-symbols-outlined text-lg">content_copy</span></button>
+          </div>
+          <button data-action="openBot" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
+            <span class="material-symbols-outlined text-sm">send</span>Open Bot to Confirm
+          </button>
         </div>
-        <button data-action="openBot" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
-          <span class="material-symbols-outlined text-sm">send</span>Open Bot
-        </button>
       </div>
     </section>
 
-    <!-- Cost table -->
+    <!-- Cost per action -->
     <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-primary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Cost Per Action (from yield)</h2></div>
+      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-primary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Cost Per Action</h2></div>
       <div class="bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/5">
-        <div class="flex justify-between px-4 py-2.5 border-b border-outline-variant/5">
-          <span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">Action</span>
-          <span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">cUSD (from yield)</span>
-        </div>
+        <div class="flex justify-between px-4 py-2.5 border-b border-outline-variant/5"><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">Action</span><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">cUSD</span></div>
         <div class="divide-y divide-outline-variant/5">
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Daily Digest</span><span class="text-xs font-mono font-bold text-emerald-400">Free</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Renewal Alerts</span><span class="text-xs font-mono font-bold text-emerald-400">Free</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Gmail Scan</span><span class="text-xs font-mono font-bold text-amber-500">0.002</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">LLM Audit</span><span class="text-xs font-mono font-bold text-amber-500">0.002</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">CSV Export</span><span class="text-xs font-mono font-bold text-amber-500">0.001</span></div>
+          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Gmail Scan</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
+          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">AI Audit</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
+          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Export CSV</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
+          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Negotiation Email</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
+          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">View Dashboard</span><span class="text-xs font-mono font-bold text-tertiary">Free</span></div>
         </div>
       </div>
-      <p class="text-[10px] text-on-surface-variant text-center mt-2">5 cUSD via Aave generates enough yield to cover all usage — deposit once, runs forever</p>
     </section>
 
-    <!-- On-chain decision log -->
+    <!-- Usage history -->
     <section class="pb-4">
-      <div class="flex items-center gap-2 mb-3">
-        <span class="w-1 h-3 bg-tertiary rounded-full"></span>
-        <h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">On-Chain Decision Log</h2>
-        <span class="ml-auto text-[9px] font-mono text-tertiary">Celo Mainnet</span>
-      </div>
-      <div id="decisions-list" class="space-y-2">
-        <p class="text-xs text-on-surface-variant text-center py-3">No decisions logged yet — run an audit.</p>
-      </div>
-      <a href="https://celoscan.io/address/0x5bc06976e5b46fd624195EFdD0bFC45a73569003" target="_blank"
-         class="flex items-center justify-center gap-1 mt-3 text-[10px] text-tertiary hover:text-primary">
-        <span class="material-symbols-outlined text-sm">open_in_new</span>
-        View all decisions on CeloScan
-      </a>
+      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-tertiary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Usage History</h2></div>
+      <div id="tx-history"><p class="text-xs text-on-surface-variant text-center py-3">No transactions yet.</p></div>
+      <p class="text-[10px] text-on-surface-variant text-center mt-3">Running on Celo · Fees &lt; $0.001</p>
     </section>
   </div>
 </div>
@@ -368,6 +354,39 @@
 <!-- SCREEN: SETTINGS -->
 <div id="screen-settings" class="screen bg-surface">
   <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
+    <!-- Web3Auth Account Section -->
+    <section class="space-y-2">
+      <h3 class="text-on-surface-variant font-medium text-xs uppercase tracking-widest pl-1">Web3Auth Account</h3>
+      <div id="settings-w3a-logged-out" class="bg-surface-container rounded-xl p-4 space-y-3">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center flex-shrink-0"><span class="text-cyan-400 text-lg">🔐</span></div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-semibold">Not connected</p>
+            <p class="text-[10px] text-on-surface-variant">Sign in with Google, Twitter, Discord, or email</p>
+          </div>
+        </div>
+        <button data-action="web3authLogin" class="w-full py-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
+          <span class="material-symbols-outlined text-sm">lock_open</span>Connect Web3Auth
+        </button>
+      </div>
+      <div id="settings-w3a-logged-in" class="hidden bg-surface-container rounded-xl p-4 space-y-3">
+        <div class="flex items-center gap-3">
+          <div id="settings-w3a-avatar" class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center font-bold text-cyan-400 flex-shrink-0">?</div>
+          <div class="flex-1 min-w-0">
+            <p id="settings-w3a-name" class="text-sm font-semibold truncate">—</p>
+            <p id="settings-w3a-email" class="text-[10px] text-on-surface-variant truncate">—</p>
+            <p class="text-[10px] text-cyan-400 mt-0.5">✓ Web3Auth connected</p>
+          </div>
+        </div>
+        <div class="flex gap-2">
+          <div class="flex-1 bg-surface-container-low rounded-lg px-3 py-2">
+            <p class="text-[10px] text-on-surface-variant">User ID</p>
+            <p id="settings-w3a-userid" class="text-[10px] font-mono text-primary truncate">—</p>
+          </div>
+          <button data-action="web3authLogout" class="px-4 py-2 rounded-lg border border-error/30 text-error text-xs font-semibold active:scale-95">Sign out</button>
+        </div>
+      </div>
+    </section>
     <section class="space-y-2">
       <h3 class="text-on-surface-variant font-medium text-xs uppercase tracking-widest pl-1">Telegram Bot</h3>
       <div class="bg-surface-container rounded-xl p-4 space-y-3">
@@ -448,6 +467,5 @@
 </div>
 
 <script src="popup.js"></script>
-</div><!-- #app -->
 </body>
 </html>

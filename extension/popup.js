@@ -715,7 +715,10 @@ function resetBot() {
   if (confirm('Reset all SubBot data? This cannot be undone.')) {
     state = { telegramUserId: null, subscriptions: [], budget: 100, balance: 0, txHistory: [] };
     saveState();
-    showScreen('welcome');
+    chrome.storage.local.remove('web3auth', () => {
+      renderW3AStatus(null);
+      showScreen('welcome');
+    });
   }
 }
 
@@ -742,12 +745,12 @@ async function init() {
   drawQR('credits-qr', PROJECT_WALLET);
   document.querySelectorAll('.project-addr-short').forEach(el => el.textContent = shortAddr(PROJECT_WALLET));
 
-  // Load Web3Auth state
+  // Load Web3Auth state — clear if token is older than 23h (tokens expire at 24h)
   const w3aData = await new Promise(r => chrome.storage.local.get('web3auth', r));
   const w3a     = w3aData.web3auth;
-  if (w3a?.idToken) {
+  const TOKEN_TTL = 23 * 60 * 60 * 1000;
+  if (w3a?.idToken && (Date.now() - (w3a.loginAt || 0)) < TOKEN_TTL) {
     renderW3AStatus(w3a);
-    // If Web3Auth is the active session, set userId and go to dashboard
     if (!state.telegramUserId || state.telegramUserId.startsWith('w3a:')) {
       state.telegramUserId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
       fetchUserData().catch(() => {});
@@ -755,6 +758,10 @@ async function init() {
       return;
     }
   } else {
+    if (w3a?.idToken) {
+      // Token expired — clear it silently
+      chrome.storage.local.remove('web3auth');
+    }
     renderW3AStatus(null);
   }
 
