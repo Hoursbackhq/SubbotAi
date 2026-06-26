@@ -21,9 +21,9 @@ let web3authInstance = null;
 let web3authInitPromise = null;
 
 async function waitForSDK() {
-  if (window.Modal) return;
+  if (window.Modal && window.EthereumProvider) return;
   return new Promise(resolve => {
-    const check = setInterval(() => { if (window.Modal) { clearInterval(check); resolve(); } }, 100);
+    const check = setInterval(() => { if (window.Modal && window.EthereumProvider) { clearInterval(check); resolve(); } }, 100);
     setTimeout(() => { clearInterval(check); resolve(); }, 10000);
   });
 }
@@ -35,10 +35,14 @@ async function getWeb3Auth() {
   web3authInitPromise = (async () => {
     await waitForSDK();
     if (!window.Modal) throw new Error('Web3Auth SDK failed to load');
+    if (!window.EthereumProvider) throw new Error('EthereumProvider SDK failed to load');
     const { Web3Auth } = window.Modal;
+    const { EthereumPrivateKeyProvider } = window.EthereumProvider;
+    const privateKeyProvider = new EthereumPrivateKeyProvider({ config: { chainConfig: CELO_CHAIN } });
     const instance = new Web3Auth({
       clientId: W3A_CLIENT_ID,
       chainConfig: CELO_CHAIN,
+      privateKeyProvider,
       web3AuthNetwork: 'sapphire_mainnet',
     });
     await instance.init();
