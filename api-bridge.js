@@ -327,12 +327,12 @@ app.get('/analysis', (req, res) => {
   res.json(analysis);
 });
 
-// Export CSV (calls export.py which sends to Telegram)
+// Export CSV (calls export.py)
 app.post('/export', async (req, res) => {
   const { userId = 'local' } = req.body;
   try {
     await runPy(`export.py --user-id ${userId} --notify`);
-    res.json({ ok: true, message: 'CSV sent to Telegram' });
+    res.json({ ok: true, message: 'CSV exported' });
   } catch(e) {
     // Fallback — return CSV data for browser download
     const file = path.join(userDir(userId), 'scanned-subscriptions.json');
@@ -547,7 +547,7 @@ app.post('/vault/withdraw', async (req, res) => {
 // POST /vault/fund-reserve — fund yield reserve (admin)
 app.post('/vault/fund-reserve', async (req, res) => {
   res.json({ vaultAddress: process.env.VAULT_CONTRACT_ADDRESS,
-             instructions: 'Deposit cUSD into the vault — it is supplied to Aave automatically.' });
+             instructions: 'Deposit G$ into the vault — it is supplied to Aave automatically.' });
 });
 
 // ── Unified charge endpoint ────────────────────────────────────────────────
@@ -606,7 +606,7 @@ app.post('/charge', async (req, res) => {
     action,
     costCUSD,
     totalFreeRuns: usage.total,
-    hint: usage.total >= 5 ? `You've run ${usage.total} operations free. Deposit 5 cUSD into the vault and it runs forever from yield.` : null
+    hint: usage.total >= 5 ? `You've run ${usage.total} operations free. Deposit G$ into the vault and it runs forever from yield.` : null
   });
 });
 
@@ -639,7 +639,7 @@ app.get('/balance', async (req, res) => {
   if (!address) return res.status(400).json({ error: 'address required' });
   try {
     const balance = await getCUSDBalance(address);
-    res.json({ address, balance, currency: 'cUSD' });
+    res.json({ address, balance, currency: 'G$' });
   } catch(e) {
     res.status(500).json({ error: 'RPC error', detail: e.message, balance: '0' });
   }

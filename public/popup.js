@@ -1,7 +1,6 @@
 /* popup.js — SubBot Extension (view layer for @SubmanagerAgentBot) */
 
-const API            = 'https://portal-subscription-manager-production.up.railway.app';
-const BOT_USERNAME   = 'SubmanagerAgentBot';
+const API            = 'https://subbotai.xyz';
 // TODO: replace with your real project Celo wallet address
 const PROJECT_WALLET = '0xA6F46Dcaa07C6b56D02379Ec3b2AafDFe3BA0DfA';
 
@@ -134,7 +133,7 @@ async function syncWeb3AuthUser(w3a) {
 
     if (res.ok) {
       const userId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
-      state.telegramUserId = userId; // reuse existing userId field for API calls
+      state.userId = userId; // reuse existing userId field for API calls
       saveState();
       const gotData = await fetchUserData(false);
       toast(gotData ? `Welcome back, ${w3a.name || 'user'}!` : `Logged in as ${w3a.name || 'user'}`);
@@ -145,7 +144,7 @@ async function syncWeb3AuthUser(w3a) {
   } catch (_) {
     // Backend verification unavailable — still allow local use
     const userId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
-    state.telegramUserId = userId;
+    state.userId = userId;
     saveState();
     toast(`Logged in as ${w3a.name || 'user'} (offline mode)`);
     showScreen('dashboard');
@@ -155,7 +154,7 @@ async function syncWeb3AuthUser(w3a) {
 async function web3authLogout() {
   w3aRemove(() => {
     renderW3AStatus(null);
-    state.telegramUserId = null;
+    state.userId = null;
     state.subscriptions  = [];
     state.balance        = 0;
     state.txHistory      = [];
@@ -166,7 +165,7 @@ async function web3authLogout() {
 }
 
 let state = {
-  telegramUserId: null,
+  userId:         null,
   subscriptions:  [],
   budget:         100,
   balance:        0,
@@ -174,7 +173,7 @@ let state = {
 };
 
 // ── User ID ───────────────────────────────────────────────────────────────
-function userId() { return state.telegramUserId || 'local'; }
+function userId() { return state.userId || 'local'; }
 
 // ── State persistence ─────────────────────────────────────────────────────
 function saveState() {
@@ -253,14 +252,11 @@ document.addEventListener('click', e => {
 
   switch (action) {
     case 'nav':              showScreen(target); break;
-    case 'setupPair':        setupAndPair(); break;
-    case 'openBot':          openBot(); break;
     case 'refreshData':      refreshData(); break;
     case 'addSub':           showAddSubModal(); break;
     case 'saveManualSub':    saveManualSub(); break;
     case 'filter':           if (filter) setFilter(filter); break;
     case 'saveBudget':       saveBudget(); break;
-    case 'saveTgId':         saveTgId(); break;
     case 'exportAction':     exportCSV(); break;
     case 'resetBot':         resetBot(); break;
     case 'showQR':           showQRModal(); break;
@@ -342,32 +338,7 @@ async function refreshData() {
   toast('Data refreshed');
 }
 
-function openBot() {
-  window.open(`https://t.me/${BOT_USERNAME}`, '_blank');
-}
-
 // ── Onboarding ────────────────────────────────────────────────────────────
-async function setupAndPair() {
-  const val = document.getElementById('setup-tg-id')?.value?.trim();
-  if (!val || !/^\d+$/.test(val)) { toast('Enter your numeric Telegram ID'); return; }
-
-  const btn = document.getElementById('setup-btn');
-  if (btn) { btn.textContent = 'Loading…'; btn.disabled = true; }
-
-  state.telegramUserId = val;
-  saveState();
-
-  const gotData = await fetchUserData(false);
-
-  if (btn) { btn.textContent = 'Open Dashboard'; btn.disabled = false; }
-
-  if (gotData) {
-    toast(`Loaded ${state.subscriptions.length} subscription(s)!`);
-  } else {
-    toast('Paired! Ask your bot to scan Gmail first.');
-  }
-  showScreen('dashboard');
-}
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
 function refreshDashboard() {
@@ -398,7 +369,7 @@ function refreshDashboard() {
   }
 
   const strip = document.getElementById('strip-balance');
-  if (strip) strip.textContent = (state.balance || 0).toFixed(2) + ' cUSD';
+  if (strip) strip.textContent = (state.balance || 0).toFixed(2) + ' G$';
 
   // Renewals list
   const renewalDiv = document.getElementById('renewals-list');
@@ -612,7 +583,7 @@ function renderTxHistory() {
   div.innerHTML = state.txHistory.slice(0, 20).map(tx => {
     const isDeposit = tx.type === 'deposit';
     const icon      = icons[tx.action || tx.type] || 'payments';
-    const amt       = isDeposit ? `+${tx.amount?.toFixed(2)} cUSD` : `-${tx.amount?.toFixed(2)} cUSD`;
+    const amt       = isDeposit ? `+${tx.amount?.toFixed(2)} G$` : `-${tx.amount?.toFixed(2)} G$`;
     const amtColor  = isDeposit ? 'text-tertiary' : 'text-error';
     const label     = tx.action ? (tx.action.charAt(0).toUpperCase() + tx.action.slice(1)) : 'Deposit';
     const date      = new Date(tx.ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
@@ -631,22 +602,6 @@ function refreshSettings() {
   // Web3Auth status
   w3aGet(w3a => renderW3AStatus(w3a));
 
-  const tgId = state.telegramUserId;
-  const isTgId = tgId && !tgId.startsWith('w3a:');
-
-  const tgInput = document.getElementById('settings-tg-id');
-  if (tgInput && isTgId) tgInput.value = tgId;
-
-  const tgStatus = document.getElementById('tg-pair-status');
-  if (tgStatus) {
-    if (isTgId) {
-      tgStatus.textContent = `Paired — ID: ${tgId}`;
-      tgStatus.className   = 'text-[10px] text-tertiary';
-    } else {
-      tgStatus.textContent = '';
-    }
-  }
-
   const bInput = document.getElementById('budget-input');
   if (bInput) bInput.value = state.budget || 100;
 }
@@ -658,28 +613,6 @@ async function saveBudget() {
     saveState();
     try { await fetch(`${API}/budget`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ budget: v, userId: userId() }) }); } catch(e) {}
     toast('Budget saved!');
-  }
-}
-
-async function saveTgId() {
-  const val = document.getElementById('settings-tg-id')?.value?.trim();
-  if (!val || !/^\d+$/.test(val)) { toast('Enter a valid numeric Telegram ID'); return; }
-  state.telegramUserId = val;
-  saveState();
-
-  const gotData = await fetchUserData(false);
-  if (gotData) {
-    toast(`Synced — ${state.subscriptions.length} subscription(s) loaded.`);
-    refreshDashboard();
-    renderSubs();
-  } else {
-    toast('Paired! Ask your bot to scan Gmail first.');
-  }
-
-  const tgStatus = document.getElementById('tg-pair-status');
-  if (tgStatus) {
-    tgStatus.textContent = `Paired — ID: ${val}`;
-    tgStatus.className   = 'text-[10px] text-tertiary';
   }
 }
 
@@ -736,7 +669,7 @@ async function saveManualSub() {
 async function exportCSV() {
   try {
     const r = await fetch(`${API}/export`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userId() }) });
-    if (r.ok) { toast('CSV sent to Telegram!'); return; }
+    if (r.ok) { toast('CSV exported!'); return; }
   } catch(e) {}
 
   // Fallback: generate in browser
@@ -753,7 +686,7 @@ async function exportCSV() {
 // ── Reset ─────────────────────────────────────────────────────────────────
 function resetBot() {
   if (confirm('Reset all SubBot data? This cannot be undone.')) {
-    state = { telegramUserId: null, subscriptions: [], budget: 100, balance: 0, txHistory: [] };
+    state = { userId: null, subscriptions: [], budget: 100, balance: 0, txHistory: [] };
     saveState();
     w3aRemove(() => {
       renderW3AStatus(null);
@@ -778,6 +711,13 @@ function togglePref(btn) {
 async function init() {
   await loadState();
 
+  // Migrate legacy telegramUserId to userId
+  if (state.telegramUserId && !state.userId) {
+    state.userId = state.telegramUserId;
+    delete state.telegramUserId;
+    saveState();
+  }
+
   const searchInput = document.getElementById('sub-search');
   if (searchInput) searchInput.addEventListener('input', () => { searchQ = searchInput.value.toLowerCase(); renderSubs(); });
 
@@ -790,8 +730,8 @@ async function init() {
   const w3a = await new Promise(r => w3aGet(r));
   if (w3a?.idToken && (Date.now() - (w3a.loginAt || 0)) < TOKEN_TTL) {
     renderW3AStatus(w3a);
-    if (!state.telegramUserId || state.telegramUserId.startsWith('w3a:')) {
-      state.telegramUserId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
+    if (!state.userId || state.userId.startsWith('w3a:')) {
+      state.userId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
       fetchUserData().catch(() => {});
       showScreen('dashboard');
       return;
@@ -801,8 +741,7 @@ async function init() {
     renderW3AStatus(null);
   }
 
-  if (state.telegramUserId) {
-    // Already paired via Telegram — refresh in background, show dashboard
+  if (state.userId) {
     fetchUserData().catch(() => {});
     showScreen('dashboard');
   } else {

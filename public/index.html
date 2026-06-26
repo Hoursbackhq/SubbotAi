@@ -80,12 +80,12 @@
         </div>
       </div>
       <h1 class="text-3xl font-extrabold tracking-tight mb-2">Meet SubBot</h1>
-      <p class="text-on-surface-variant text-sm px-4 leading-relaxed">Your AI/SaaS subscription manager. Powered by your Telegram bot.</p>
+      <p class="text-on-surface-variant text-sm px-4 leading-relaxed">Track, audit, and optimise your SaaS spend.</p>
     </div>
     <div class="w-full grid grid-cols-1 gap-3 my-4">
       <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
         <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-primary">travel_explore</span></div>
-        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-primary block">Auto-detect</span><span class="text-[11px] text-on-surface-variant">Bot scans Gmail for billing emails</span></div>
+        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-primary block">Gmail scan</span><span class="text-[11px] text-on-surface-variant">Scan billing emails automatically</span></div>
       </div>
       <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
         <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-secondary">analytics</span></div>
@@ -97,7 +97,7 @@
       </div>
       <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
         <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-amber-400">bolt</span></div>
-        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-amber-400 block">Pay-per-run</span><span class="text-[11px] text-on-surface-variant">Send $1 cUSD · bot runs for you</span></div>
+        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-amber-400 block">Pay-per-run</span><span class="text-[11px] text-on-surface-variant">Pay with G$ · runs automatically</span></div>
       </div>
     </div>
     <div class="w-full">
@@ -109,15 +109,15 @@
   </div>
 </div>
 
-<!-- SCREEN: SETUP (pair with Telegram bot) -->
+<!-- SCREEN: SETUP (sign in) -->
 <div id="screen-setup" class="screen bg-surface">
   <div class="flex-1 flex flex-col px-8 py-8 space-y-6 overflow-y-auto" style="max-height:580px;">
     <div class="text-center">
       <div class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center logo-glow border border-primary/20 mx-auto mb-4">
-        <span class="material-symbols-outlined text-[36px] text-primary">send</span>
+        <span class="material-symbols-outlined text-[36px] text-primary">lock_open</span>
       </div>
-      <h1 class="text-2xl font-bold">Connect Your Bot</h1>
-      <p class="text-on-surface-variant text-sm mt-2 leading-relaxed">The extension shows data from your Telegram bot. Connect once and it syncs automatically.</p>
+      <h1 class="text-2xl font-bold">Sign In</h1>
+      <p class="text-on-surface-variant text-sm mt-2 leading-relaxed">Sign in once and your data syncs automatically across devices.</p>
     </div>
 
     <!-- Web3Auth Login Option -->
@@ -144,43 +144,7 @@
       </button>
     </div>
 
-    <!-- Divider -->
-    <div class="flex items-center gap-3 text-on-surface-variant text-[11px]">
-      <div class="flex-1 h-px bg-outline-variant/20"></div>
-      <span>or pair with Telegram</span>
-      <div class="flex-1 h-px bg-outline-variant/20"></div>
-    </div>
-
-    <div class="glass rounded-2xl p-5 border border-outline-variant/10 space-y-4">
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-primary text-xs font-bold">1</span></div>
-        <div>
-          <p class="text-sm font-semibold">Open your Telegram bot</p>
-          <button data-action="openBot" class="mt-1.5 text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
-            <span class="material-symbols-outlined text-sm">open_in_new</span>@SubmanagerAgentBot
-          </button>
-        </div>
-      </div>
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-primary text-xs font-bold">2</span></div>
-        <div>
-          <p class="text-sm font-semibold">Send <code class="bg-surface-container px-1.5 py-0.5 rounded font-mono text-primary">/myid</code> to the bot</p>
-          <p class="text-[11px] text-on-surface-variant mt-0.5">It will reply with your numeric Telegram ID.</p>
-        </div>
-      </div>
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-primary text-xs font-bold">3</span></div>
-        <div class="flex-1">
-          <p class="text-sm font-semibold mb-2">Paste your ID here</p>
-          <input id="setup-tg-id" type="text" inputmode="numeric" placeholder="e.g. 6710506545" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl py-3 px-4 text-sm font-mono focus:outline-none focus:border-primary/50"/>
-        </div>
-      </div>
-    </div>
-
-    <button id="setup-btn" data-action="setupPair" class="signature-glow w-full py-4 rounded-2xl text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-      Load My Data <span class="material-symbols-outlined">arrow_forward</span>
-    </button>
-    <p class="text-center text-[11px] text-on-surface-variant">Haven't scanned yet? Connect the bot and say <span class="font-mono text-primary">"scan my Gmail"</span></p>
+    <p class="text-center text-[11px] text-on-surface-variant">Sign in to connect your wallet for G$ transactions</p>
   </div>
 </div>
 
@@ -207,12 +171,12 @@
     </div>
     <div id="credits-strip" class="flex items-center justify-between px-3 py-2 bg-surface-container rounded-xl border border-outline-variant/10">
       <div class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-400 text-lg">payments</span><span class="text-xs text-on-surface-variant">Credits</span></div>
-      <span id="strip-balance" class="text-sm font-mono font-bold">— cUSD</span>
+      <span id="strip-balance" class="text-sm font-mono font-bold">— G$</span>
       <button data-action="nav" data-target="credits" class="text-xs font-semibold bg-amber-500 text-slate-900 px-3 py-1 rounded-lg active:scale-95">Top Up</button>
     </div>
     <div class="grid grid-cols-2 gap-3">
-      <button data-action="openBot" class="bg-gradient-to-br from-cyan-400 to-cyan-600 text-slate-900 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        <span class="material-symbols-outlined text-sm">send</span><span class="text-xs">Open Bot</span>
+      <button data-action="addSub" class="bg-gradient-to-br from-cyan-400 to-cyan-600 text-slate-900 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
+        <span class="material-symbols-outlined text-sm">add</span><span class="text-xs">Add Sub</span>
       </button>
       <button data-action="nav" data-target="audit" class="border border-outline-variant/30 text-primary font-semibold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
         <span class="material-symbols-outlined text-sm">analytics</span><span class="text-xs">View Audit</span>
@@ -265,7 +229,7 @@
     <section><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-1.5"><span class="w-1 h-3 bg-secondary rounded-full"></span>Quick Wins 💡</h2><div id="quick-wins"><p class="text-xs text-on-surface-variant text-center py-3">No data yet.</p></div></section>
     <div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-3 border border-outline-variant/10">
       <span class="material-symbols-outlined text-primary text-sm">info</span>
-      <p class="text-[11px] text-on-surface-variant leading-snug">For a deeper AI audit, ask your Telegram bot: <span class="font-mono text-primary">"audit my subscriptions"</span></p>
+      <p class="text-[11px] text-on-surface-variant leading-snug">For a deeper AI audit, run an AI audit above.</p>
     </div>
   </div>
 </div>
@@ -299,14 +263,14 @@
       <div class="flex justify-between items-start">
         <div class="flex items-center gap-2">
           <div class="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center"><span class="material-symbols-outlined text-amber-500 text-lg" style="font-variation-settings:'FILL' 1">token</span></div>
-          <span class="text-xs font-mono text-amber-500 uppercase tracking-widest">Celo Mainnet · cUSD</span>
+          <span class="text-xs font-mono text-amber-500 uppercase tracking-widest">Celo Mainnet · G$</span>
         </div>
       </div>
       <div class="mt-3">
         <span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Your Balance</span>
-        <div class="flex items-baseline gap-2"><h1 id="credits-balance" class="text-3xl font-bold font-mono leading-none">0.00</h1><span class="text-amber-500 font-mono font-medium">cUSD</span></div>
+        <div class="flex items-baseline gap-2"><h1 id="credits-balance" class="text-3xl font-bold font-mono leading-none">0.00</h1><span class="text-amber-500 font-mono font-medium">G$</span></div>
       </div>
-      <p class="text-[10px] text-on-surface-variant mt-2">Managed by your Telegram bot · syncs automatically</p>
+      <p class="text-[10px] text-on-surface-variant mt-2">Managed by SubBot · syncs automatically</p>
     </div>
 
     <!-- How to top up -->
@@ -315,13 +279,13 @@
       <div class="glass border border-outline-variant/10 rounded-2xl p-5 flex flex-col items-center gap-4">
         <div class="bg-white p-3 rounded-2xl shadow-lg"><canvas id="credits-qr" width="140" height="140"></canvas></div>
         <div class="w-full space-y-2">
-          <p class="text-[11px] text-on-surface-variant text-center leading-snug">Send any amount of <span class="text-on-surface font-semibold">cUSD</span> from <span class="text-primary">MiniPay</span> or <span class="text-primary">Valora</span> to this address, then confirm with your bot.</p>
+          <p class="text-[11px] text-on-surface-variant text-center leading-snug">Send any amount of <span class="text-on-surface font-semibold">G$</span> from <span class="text-primary">MiniPay</span> or <span class="text-primary">Valora</span> to this address.</p>
           <div class="flex items-center gap-2 p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl">
             <code id="qr-addr" class="text-[10px] font-mono text-secondary flex-1 truncate">—</code>
             <button data-action="copyProjectAddr" class="text-on-surface-variant hover:text-primary flex-shrink-0"><span class="material-symbols-outlined text-lg">content_copy</span></button>
           </div>
-          <button data-action="openBot" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
-            <span class="material-symbols-outlined text-sm">send</span>Open Bot to Confirm
+          <button data-action="refreshData" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
+            <span class="material-symbols-outlined text-sm">sync</span>Refresh Balance
           </button>
         </div>
       </div>
@@ -331,7 +295,7 @@
     <section>
       <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-primary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Cost Per Action</h2></div>
       <div class="bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/5">
-        <div class="flex justify-between px-4 py-2.5 border-b border-outline-variant/5"><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">Action</span><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">cUSD</span></div>
+        <div class="flex justify-between px-4 py-2.5 border-b border-outline-variant/5"><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">Action</span><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">G$</span></div>
         <div class="divide-y divide-outline-variant/5">
           <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Gmail Scan</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
           <div class="flex justify-between px-4 py-2.5"><span class="text-xs">AI Audit</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
@@ -385,23 +349,6 @@
           </div>
           <button data-action="web3authLogout" class="px-4 py-2 rounded-lg border border-error/30 text-error text-xs font-semibold active:scale-95">Sign out</button>
         </div>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <h3 class="text-on-surface-variant font-medium text-xs uppercase tracking-widest pl-1">Telegram Bot</h3>
-      <div class="bg-surface-container rounded-xl p-4 space-y-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-primary">send</span></div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold">Telegram User ID</p>
-            <p class="text-[10px] text-on-surface-variant leading-snug">Send <span class="font-mono text-primary">/myid</span> to @SubmanagerAgentBot to get your ID.</p>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <input id="settings-tg-id" type="text" inputmode="numeric" placeholder="e.g. 6710506545" class="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs focus:outline-none font-mono"/>
-          <button data-action="saveTgId" class="px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold active:scale-95">Sync</button>
-        </div>
-        <p id="tg-pair-status" class="text-[10px] text-on-surface-variant"></p>
       </div>
     </section>
     <section class="space-y-2">
