@@ -1,8 +1,6 @@
 /* popup.js — SubBot Extension (view layer for @SubmanagerAgentBot) */
 
 const API            = 'https://subbotai.xyz';
-// TODO: replace with your real project Celo wallet address
-const PROJECT_WALLET = '0xA6F46Dcaa07C6b56D02379Ec3b2AafDFe3BA0DfA';
 
 // ── Web3Auth ──────────────────────────────────────────────────────────────────
 const W3A_CLIENT_ID = 'BCkzpmFTjh9pTHe7LGNlrg_jo22W7DNHGkkZSbgrQlOeSf7AzRZ1qdZXDRyxplEq5knOTiCjhH-uga6tpnASP1o';
@@ -20,8 +18,8 @@ let web3authInstance = null;
 
 async function getWeb3Auth() {
   if (web3authInstance) return web3authInstance;
-  const { Web3Auth } = window.Modal;
-  web3authInstance = new Web3Auth({
+  const W3A = window.Modal?.Web3Auth || window.Modal;
+  web3authInstance = new W3A({
     clientId: W3A_CLIENT_ID,
     chainConfig: W3A_CHAIN_CONFIG,
     web3AuthNetwork: 'sapphire_mainnet',
@@ -245,8 +243,6 @@ document.addEventListener('click', e => {
     case 'saveBudget':       saveBudget(); break;
     case 'exportAction':     exportCSV(); break;
     case 'resetBot':         resetBot(); break;
-    case 'showQR':           showQRModal(); break;
-    case 'copyProjectAddr':  copyProjectAddr(); break;
     case 'closeModal':       if (modal) document.getElementById(modal)?.classList.remove('active'); break;
     case 'copyNeg':          copyNegotiationEmail(); break;
     case 'draftEmail':       draftEmail(el.dataset.service); break;
@@ -257,32 +253,6 @@ document.addEventListener('click', e => {
   }
 });
 
-// ── QR ────────────────────────────────────────────────────────────────────
-function drawQR(canvasId, text) {
-  const img = new Image();
-  img.crossOrigin = 'anonymous';
-  img.onload = () => {
-    const c = document.getElementById(canvasId);
-    if (c) c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-  };
-  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}&color=000000&bgcolor=ffffff`;
-}
-
-function shortAddr(addr) {
-  if (!addr || addr.length < 10) return addr;
-  return addr.slice(0, 6) + '…' + addr.slice(-4);
-}
-
-function copyProjectAddr() {
-  navigator.clipboard.writeText(PROJECT_WALLET).then(() => toast('Address copied!'));
-}
-
-function showQRModal() {
-  drawQR('qr-canvas', PROJECT_WALLET);
-  const addrEl = document.getElementById('qr-addr');
-  if (addrEl) addrEl.textContent = PROJECT_WALLET;
-  document.getElementById('modal-qr')?.classList.add('active');
-}
 
 // ── Fetch data from bot via bridge ────────────────────────────────────────
 async function fetchUserData(silent = true) {
@@ -552,9 +522,6 @@ function copyNegotiationEmail() {
 // ── Credits ───────────────────────────────────────────────────────────────
 function refreshCredits() {
   document.getElementById('credits-balance').textContent = (state.balance || 0).toFixed(2);
-  const addrEl = document.getElementById('qr-addr');
-  if (addrEl) addrEl.textContent = shortAddr(PROJECT_WALLET);
-  drawQR('credits-qr', PROJECT_WALLET);
   renderTxHistory();
 }
 
@@ -707,9 +674,6 @@ async function init() {
   const searchInput = document.getElementById('sub-search');
   if (searchInput) searchInput.addEventListener('input', () => { searchQ = searchInput.value.toLowerCase(); renderSubs(); });
 
-  // Draw project wallet QR on credits screen (static, always the same)
-  drawQR('credits-qr', PROJECT_WALLET);
-  document.querySelectorAll('.project-addr-short').forEach(el => el.textContent = shortAddr(PROJECT_WALLET));
 
   // Load Web3Auth state — clear if token is older than 23h (tokens expire at 24h)
   const TOKEN_TTL = 23 * 60 * 60 * 1000;

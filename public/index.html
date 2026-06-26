@@ -273,21 +273,14 @@
       <p class="text-[10px] text-on-surface-variant mt-2">Managed by SubBot · syncs automatically</p>
     </div>
 
-    <!-- How to top up -->
+    <!-- Top up via GoodDollar -->
     <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-amber-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">How to Top Up</h2></div>
-      <div class="glass border border-outline-variant/10 rounded-2xl p-5 flex flex-col items-center gap-4">
-        <div class="bg-white p-3 rounded-2xl shadow-lg"><canvas id="credits-qr" width="140" height="140"></canvas></div>
-        <div class="w-full space-y-2">
-          <p class="text-[11px] text-on-surface-variant text-center leading-snug">Send any amount of <span class="text-on-surface font-semibold">G$</span> from <span class="text-primary">MiniPay</span> or <span class="text-primary">Valora</span> to this address.</p>
-          <div class="flex items-center gap-2 p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl">
-            <code id="qr-addr" class="text-[10px] font-mono text-secondary flex-1 truncate">—</code>
-            <button data-action="copyProjectAddr" class="text-on-surface-variant hover:text-primary flex-shrink-0"><span class="material-symbols-outlined text-lg">content_copy</span></button>
-          </div>
-          <button data-action="refreshData" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
-            <span class="material-symbols-outlined text-sm">sync</span>Refresh Balance
-          </button>
-        </div>
+      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-amber-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Top Up</h2></div>
+      <div class="glass border border-outline-variant/10 rounded-2xl p-4 space-y-3">
+        <p class="text-[11px] text-on-surface-variant leading-snug">Claim your daily G$ from <a href="https://wallet.gooddollar.org" target="_blank" class="text-primary font-semibold hover:underline">GoodDollar</a>, then use it here. Your Web3Auth wallet is already connected.</p>
+        <button data-action="refreshData" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
+          <span class="material-symbols-outlined text-sm">sync</span>Refresh Balance
+        </button>
       </div>
     </section>
 
