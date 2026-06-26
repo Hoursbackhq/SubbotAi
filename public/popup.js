@@ -45,7 +45,13 @@ async function getWeb3Auth() {
       privateKeyProvider,
       web3AuthNetwork: 'sapphire_mainnet',
     });
-    await instance.init();
+    try {
+      await instance.init();
+    } catch (initErr) {
+      console.error('Web3Auth init failed:', initErr);
+      web3authInitPromise = null; // allow retry
+      throw initErr;
+    }
     web3authInstance = instance;
     return instance;
   })();
@@ -689,12 +695,11 @@ async function init() {
     fetchUserData().catch(() => {});
     showScreen('dashboard');
   } else {
-    // Not connected — open Web3Auth modal immediately
+    // Not connected — show welcome, then open Web3Auth modal once SDK is ready
     w3aRemove();
     renderW3AStatus(null);
     showScreen('welcome');
-    // Auto-trigger the modal after a brief moment so user sees the app first
-    setTimeout(() => openWeb3AuthModal(), 500);
+    waitForSDK().then(() => openWeb3AuthModal());
   }
 
   // Background sync every 60s
