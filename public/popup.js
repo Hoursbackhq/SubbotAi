@@ -139,10 +139,10 @@ let web3authInstance = null;
 let web3authInitPromise = null;
 
 async function waitForSDK() {
-  if (window.Modal && window.EthereumProvider) return;
+  if (window.Modal && window.EthereumProvider && window.DefaultEvmAdapter) return;
   return new Promise(resolve => {
     const check = setInterval(() => {
-      if (window.Modal && window.EthereumProvider) { clearInterval(check); resolve(); }
+      if (window.Modal && window.EthereumProvider && window.DefaultEvmAdapter) { clearInterval(check); resolve(); }
     }, 100);
     setTimeout(() => { clearInterval(check); resolve(); }, 10000);
   });
@@ -165,6 +165,14 @@ async function getWeb3Auth() {
       privateKeyProvider,
       web3AuthNetwork: 'sapphire_mainnet',
     });
+
+    // Add external wallet adapters (MetaMask, WalletConnect, etc.)
+    if (window.DefaultEvmAdapter?.getDefaultExternalAdapters) {
+      try {
+        const adapters = await window.DefaultEvmAdapter.getDefaultExternalAdapters({ options: { clientId: W3A_CLIENT_ID, chainConfig: CELO_CHAIN, privateKeyProvider, web3AuthNetwork: 'sapphire_mainnet' } });
+        adapters.forEach(a => { try { instance.configureAdapter(a); } catch (_) {} });
+      } catch (_) {}
+    }
 
     try {
       await instance.initModal();
