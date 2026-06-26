@@ -101,52 +101,14 @@
       </div>
     </div>
     <div class="w-full">
-      <button data-action="nav" data-target="setup" class="signature-glow w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-slate-900 font-bold tracking-wide active:scale-95 transition-transform">
-        Get Started <span class="material-symbols-outlined">arrow_forward</span>
+      <button data-action="web3authLogin" class="signature-glow w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-slate-900 font-bold tracking-wide active:scale-95 transition-transform">
+        <span class="material-symbols-outlined text-sm">account_balance_wallet</span> Connect Wallet
       </button>
-      <p class="text-[10px] text-center mt-3 text-on-surface-variant uppercase tracking-[0.2em] opacity-50">No keys. No custody. Just data.</p>
+      <p class="text-[10px] text-center mt-3 text-on-surface-variant uppercase tracking-[0.2em] opacity-50">Social login · MetaMask · WalletConnect</p>
     </div>
   </div>
 </div>
 
-<!-- SCREEN: SETUP (sign in) -->
-<div id="screen-setup" class="screen bg-surface">
-  <div class="flex-1 flex flex-col px-8 py-8 space-y-6 overflow-y-auto" style="max-height:580px;">
-    <div class="text-center">
-      <div class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center logo-glow border border-primary/20 mx-auto mb-4">
-        <span class="material-symbols-outlined text-[36px] text-primary">lock_open</span>
-      </div>
-      <h1 class="text-2xl font-bold">Sign In</h1>
-      <p class="text-on-surface-variant text-sm mt-2 leading-relaxed">Sign in once and your data syncs automatically across devices.</p>
-    </div>
-
-    <!-- Web3Auth Login Option -->
-    <div class="glass rounded-2xl p-4 border border-cyan-500/20 space-y-3">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="text-[10px] font-bold uppercase tracking-widest text-cyan-400">✦ Web3Auth</span>
-        <span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Recommended</span>
-      </div>
-      <p class="text-[11px] text-on-surface-variant leading-snug">Sign in with Google, Twitter, Discord, or email. No seed phrases needed.</p>
-      <button id="w3a-login-btn" data-action="web3authLogin" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        <span class="material-symbols-outlined text-sm">lock_open</span>Login with Web3Auth
-      </button>
-      <!-- Shows after login -->
-      <div id="w3a-status" class="hidden items-center gap-3 p-3 bg-surface-container rounded-xl border border-outline-variant/10">
-        <div id="w3a-avatar" class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">?</div>
-        <div class="flex-1 min-w-0">
-          <p id="w3a-name" class="text-xs font-semibold truncate">—</p>
-          <p id="w3a-email" class="text-[10px] text-on-surface-variant truncate">—</p>
-        </div>
-        <button data-action="web3authLogout" class="text-error/60 hover:text-error text-[10px]">Sign out</button>
-      </div>
-      <button id="w3a-dashboard-btn" data-action="web3authDashboard" class="hidden w-full py-3 rounded-xl signature-glow text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        Open Dashboard <span class="material-symbols-outlined">arrow_forward</span>
-      </button>
-    </div>
-
-    <p class="text-center text-[11px] text-on-surface-variant">Sign in to connect your wallet for G$ transactions</p>
-  </div>
-</div>
 
 <!-- SCREEN: DASHBOARD -->
 <div id="screen-dashboard" class="screen bg-surface">

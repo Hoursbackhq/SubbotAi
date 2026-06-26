@@ -57,55 +57,52 @@ async function openWeb3AuthModal() {
     const provider = await w3a.connect();
     if (!provider) { toast('Login cancelled'); return; }
 
-    const info    = await w3a.getUserInfo();
+    // Get wallet address from provider
     const accounts = await provider.request({ method: 'eth_accounts' });
     const address  = accounts?.[0] || '';
 
+    // getUserInfo works for social logins; external wallets may not have it
+    let info = {};
+    try { info = await w3a.getUserInfo() || {}; } catch (_) {}
+
     const payload = {
-      idToken:      info.idToken,
-      email:        info.email        || '',
-      name:         info.name         || '',
-      profileImage: info.profileImage || '',
-      verifier:     info.verifier     || 'web3auth',
-      verifierId:   info.verifierId   || info.email || '',
+      idToken:       info.idToken      || '',
+      email:         info.email        || '',
+      name:          info.name         || '',
+      profileImage:  info.profileImage || '',
+      verifier:      info.verifier     || 'wallet',
+      verifierId:    info.verifierId   || address,
       walletAddress: address,
-      loginAt:      Date.now(),
+      loginAt:       Date.now(),
     };
-    w3aSet(payload, async () => {
-      renderW3AStatus(payload);
-      await syncWeb3AuthUser(payload);
-    });
+    w3aSet(payload);
+    renderW3AStatus(payload);
+
+    // Set userId from wallet address (works for both social + external wallets)
+    state.userId = address ? `w3a:${payload.verifier}:${address}` : `w3a:${payload.verifier}:${payload.verifierId}`;
+    saveState();
+
+    const gotData = await fetchUserData(false);
+    toast(gotData ? `Welcome back!` : `Connected: ${address ? address.slice(0,6) + '…' + address.slice(-4) : payload.name || 'user'}`);
+    showScreen('dashboard');
   } catch (err) {
-    if (!err.message?.includes('user closed')) toast('Login failed — try again');
+    console.error('Web3Auth error:', err);
+    if (!err.message?.includes('user closed') && !err.message?.includes('User closed')) {
+      toast('Login failed — try again');
+    }
   }
 }
 
 function renderW3AStatus(w3a) {
-  if (!w3a?.idToken) {
-    // Logged out state — setup screen
-    document.getElementById('w3a-status')?.classList.add('hidden');
-    document.getElementById('w3a-dashboard-btn')?.classList.add('hidden');
-    document.getElementById('w3a-login-btn')?.classList.remove('hidden');
-
-    // Settings screen
+  if (!w3a?.loginAt) {
+    // Logged out — settings screen
     document.getElementById('settings-w3a-logged-out')?.classList.remove('hidden');
     document.getElementById('settings-w3a-logged-in')?.classList.add('hidden');
     return;
   }
 
-  const initial = (w3a.name || w3a.email || '?').charAt(0).toUpperCase();
-
-  // Setup screen status
-  const statusEl = document.getElementById('w3a-status');
-  if (statusEl) {
-    statusEl.classList.remove('hidden');
-    statusEl.classList.add('flex');
-    document.getElementById('w3a-avatar').textContent = initial;
-    document.getElementById('w3a-name').textContent   = w3a.name  || 'Web3Auth User';
-    document.getElementById('w3a-email').textContent  = w3a.email || w3a.verifierId || '';
-    document.getElementById('w3a-login-btn')?.classList.add('hidden');
-    document.getElementById('w3a-dashboard-btn')?.classList.remove('hidden');
-  }
+  const initial = (w3a.name || w3a.email || w3a.walletAddress || '?').charAt(0).toUpperCase();
+  const displayName = w3a.name || w3a.email || (w3a.walletAddress ? w3a.walletAddress.slice(0,6) + '…' + w3a.walletAddress.slice(-4) : 'Connected');
 
   // Settings screen
   document.getElementById('settings-w3a-logged-out')?.classList.add('hidden');
@@ -113,41 +110,12 @@ function renderW3AStatus(w3a) {
   if (loggedIn) {
     loggedIn.classList.remove('hidden');
     document.getElementById('settings-w3a-avatar').textContent = initial;
-    document.getElementById('settings-w3a-name').textContent   = w3a.name  || 'Web3Auth User';
-    document.getElementById('settings-w3a-email').textContent  = w3a.email || '';
-    document.getElementById('settings-w3a-userid').textContent = `w3a:${w3a.verifier}:${w3a.verifierId}`;
+    document.getElementById('settings-w3a-name').textContent   = displayName;
+    document.getElementById('settings-w3a-email').textContent  = w3a.walletAddress || w3a.email || '';
+    document.getElementById('settings-w3a-userid').textContent = state.userId || '';
   }
 }
 
-async function syncWeb3AuthUser(w3a) {
-  // Verify the token with the backend and load user data
-  try {
-    const res = await fetch(`${API}/auth/verify-web3auth`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ idToken: w3a.idToken, verifier: w3a.verifier, verifierId: w3a.verifierId }),
-      signal: AbortSignal.timeout(6000),
-    });
-
-    if (res.ok) {
-      const userId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
-      state.userId = userId; // reuse existing userId field for API calls
-      saveState();
-      const gotData = await fetchUserData(false);
-      toast(gotData ? `Welcome back, ${w3a.name || 'user'}!` : `Logged in as ${w3a.name || 'user'}`);
-      showScreen('dashboard');
-    } else {
-      toast('Web3Auth verification failed — please try again');
-    }
-  } catch (_) {
-    // Backend verification unavailable — still allow local use
-    const userId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
-    state.userId = userId;
-    saveState();
-    toast(`Logged in as ${w3a.name || 'user'} (offline mode)`);
-    showScreen('dashboard');
-  }
-}
 
 async function web3authLogout() {
   try { if (web3authInstance?.connected) await web3authInstance.logout(); web3authInstance = null; web3authInitPromise = null; } catch (_) {}
@@ -264,7 +232,6 @@ document.addEventListener('click', e => {
     case 'togglePref':       togglePref(el); break;
     case 'web3authLogin':    openWeb3AuthModal(); break;
     case 'web3authLogout':   web3authLogout(); break;
-    case 'web3authDashboard': showScreen('dashboard'); break;
   }
 });
 
@@ -690,27 +657,20 @@ async function init() {
   if (searchInput) searchInput.addEventListener('input', () => { searchQ = searchInput.value.toLowerCase(); renderSubs(); });
 
 
-  // Load Web3Auth state — clear if token is older than 23h (tokens expire at 24h)
-  const TOKEN_TTL = 23 * 60 * 60 * 1000;
+  // Check for existing session
   const w3a = await new Promise(r => w3aGet(r));
-  if (w3a?.idToken && (Date.now() - (w3a.loginAt || 0)) < TOKEN_TTL) {
+  if (w3a?.loginAt && state.userId) {
+    // Already connected — go straight to dashboard
     renderW3AStatus(w3a);
-    if (!state.userId || state.userId.startsWith('w3a:')) {
-      state.userId = `w3a:${w3a.verifier}:${w3a.verifierId}`;
-      fetchUserData().catch(() => {});
-      showScreen('dashboard');
-      return;
-    }
-  } else {
-    if (w3a?.idToken) w3aRemove(); // expired — clear silently
-    renderW3AStatus(null);
-  }
-
-  if (state.userId) {
     fetchUserData().catch(() => {});
     showScreen('dashboard');
   } else {
+    // Not connected — open Web3Auth modal immediately
+    w3aRemove();
+    renderW3AStatus(null);
     showScreen('welcome');
+    // Auto-trigger the modal after a brief moment so user sees the app first
+    setTimeout(() => openWeb3AuthModal(), 500);
   }
 
   // Background sync every 60s
