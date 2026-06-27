@@ -216,13 +216,16 @@ async function claimGD() {
     }
 
     if (!provider || !from) {
-      if (storedGD) {
-        toast('Open MetaMask with your GoodDollar wallet to claim');
-      } else {
-        toast('Connect wallet first');
-      }
-      btn.textContent = 'Claim G$';
+      // No local wallet available — open GoodWallet to claim directly
+      btn.innerHTML = '<i class="fa-solid fa-arrow-up-right-from-square text-sm"></i> Claim on GoodWallet';
       btn.disabled = false;
+      btn.onclick = () => {
+        window.open('https://goodwallet.xyz/en', '_blank');
+        btn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i> Claim G$';
+        btn.onclick = null;
+        // Re-check when they come back
+      };
+      toast('Opening GoodWallet to claim');
       return;
     }
 
