@@ -60,15 +60,27 @@ function faviconImg(sub, sizeClass = 'w-10 h-10') {
   return `<img src="${url}" alt="${sub.name}" class="${sizeClass} rounded-lg bg-panel object-contain" onerror="this.outerHTML='<div class=\\'${sizeClass} rounded-lg bg-panel flex items-center justify-center font-bold text-lg ${initBg}\\'>${sub.name.charAt(0)}</div>'"/>`;
 }
 
-// ── GoodDollar contracts (Celo mainnet) ──────────────────────────────────
-const GD_IDENTITY = '0xC361A6E67822a0EDc17D899227dd9FC50BD62F42';
-const GD_UBISCHEME = '0x43d72Ff17701B2DA814620735C39C620Ce0ea4A1';
-const GD_TOKEN = '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A';
-// ABI encodings (4-byte selectors)
-const SEL_IS_WHITELISTED = '0x3af32abf'; // isWhitelisted(address)
-const SEL_CHECK_ENTITLEMENT = '0x0a4d564c'; // checkEntitlement(address)
-const SEL_CLAIM = '0x4e71d92d'; // claim()
-const SEL_BALANCE_OF = '0x70a08231'; // balanceOf(address)
+// ── GoodDollar contracts (Celo mainnet — from @goodsdks/citizen-sdk) ─────
+const GD_IDENTITY   = '0xC361A6E67822a0EDc17D899227dd9FC50BD62F42';
+const GD_UBISCHEME  = '0x43d72Ff17701B2DA814620735C39C620Ce0ea4A1';
+const GD_TOKEN      = '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A';
+const GD_FAUCET     = '0x4F93Fa058b03953C851eFaA2e4FC5C34afDFAb84';
+const GD_IDENTITY_URL = 'https://goodid.gooddollar.org';
+const GD_FV_MSG     = 'Sign this message to request verifying your account <account> and to create your own secret unique identifier for your anonymized record. You can use this identifier in the future to delete this anonymized record. WARNING: do not sign this message unless you trust the website/application requesting this signature.';
+// Function selectors (keccak256 first 4 bytes)
+const SEL_GET_WHITELISTED_ROOT = '0x2d0e9b46'; // getWhitelistedRoot(address)→address
+const SEL_CHECK_ENTITLEMENT    = '0x1a787f2e'; // checkEntitlement(address)→uint256
+const SEL_CHECK_ENTITLEMENT_NO = '0x98d6621b'; // checkEntitlement()→uint256
+const SEL_CLAIM         = '0x4e71d92d'; // claim()→bool
+const SEL_BALANCE_OF    = '0x70a08231'; // balanceOf(address)→uint256
+const SEL_TRANSFER      = '0xa9059cbb'; // transfer(address,uint256)
+const SEL_PERIOD_START  = '0xeda4e6d6'; // periodStart()→uint256
+const SEL_CURRENT_DAY   = '0x5c9302c9'; // currentDay()→uint256
+const SEL_CAN_TOP       = '0xe97eefd2'; // canTop(address)→bool
+const SEL_TOP_WALLET    = '0x3771dcf8'; // topWallet(address)
+
+const AGENT_WALLET = '0xfEFAC90c384f6c09004F485b9fa894D9dA910898';
+const ACTION_COSTS = { scan: 0.10, audit: 0.05, negotiate: 0.10, export: 0.05 };
 
 function padAddr(addr) { return '000000000000000000000000' + addr.slice(2).toLowerCase(); }
 
@@ -83,6 +95,184 @@ async function ethCall(to, data, from) {
   return j.result;
 }
 
+// ── Pay-per-action: G$ transfer to agent wallet ──────────────────────────
+async function payForAction(action) {
+  const cost = ACTION_COSTS[action];
+  if (!cost) return true; // free action
+
+  // Get wallet address and check balance
+  const storedGD = localStorage.getItem('gd-verified-addr');
+  let addr = storedGD;
+  if (!addr) {
+    try { const w3a = JSON.parse(localStorage.getItem('web3auth')); addr = w3a?.walletAddress; } catch (_) {}
+  }
+  if (!addr) { toast('Connect wallet first'); return false; }
+
+  // Check G$ balance
+  const balResult = await ethCall(GD_TOKEN, SEL_BALANCE_OF + padAddr(addr));
+  const balance = balResult ? Number(BigInt(balResult)) / 1e18 : 0;
+  if (balance < cost) {
+    toast(`Insufficient G$ — need ${cost.toFixed(2)}, have ${balance.toFixed(2)}`);
+    return false;
+  }
+
+  // Confirm with user
+  const ok = confirm(`This ${action} costs ${cost.toFixed(2)} G$. Pay now?`);
+  if (!ok) return false;
+
+  toast('Sending G$ payment…');
+
+  try {
+    // Get provider — injected wallet first, then Web3Auth
+    let provider = null;
+    let from = null;
+
+    if (storedGD && window.ethereum) {
+      try {
+        const injected = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        if (injected?.[0]?.toLowerCase() === storedGD.toLowerCase()) {
+          provider = window.ethereum;
+          from = injected[0];
+        }
+      } catch (_) {}
+    }
+
+    if (!provider && web3authInstance?.provider) {
+      provider = web3authInstance.provider;
+      const accounts = await provider.request({ method: 'eth_accounts' });
+      from = accounts?.[0];
+    }
+
+    if (!provider || !from) { toast('No wallet available'); return false; }
+
+    // Build transfer(address,uint256) calldata
+    const costWei = BigInt(Math.round(cost * 1e18));
+    const amountHex = costWei.toString(16).padStart(64, '0');
+    const data = SEL_TRANSFER + padAddr(AGENT_WALLET) + amountHex;
+
+    const txHash = await provider.request({
+      method: 'eth_sendTransaction',
+      params: [{ from, to: GD_TOKEN, data, gas: '0x12C00' }], // 76800 gas
+    });
+
+    toast('Confirming payment…');
+
+    // Poll for receipt
+    for (let i = 0; i < 20; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const resp = await fetch('https://forno.celo.org', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getTransactionReceipt', params: [txHash] }),
+      });
+      const j = await resp.json();
+      if (j.result) {
+        if (j.result.status === '0x1') {
+          toast(`Paid ${cost.toFixed(2)} G$ for ${action}`);
+          // Record in tx history
+          state.txHistory = [{ type: 'deduct', action, amount: cost, ts: new Date().toISOString(), txHash }, ...(state.txHistory || [])].slice(0, 200);
+          saveState();
+          // Refresh balance display
+          fetchGDWalletBalance();
+          return true;
+        } else {
+          toast('Payment transaction failed');
+          return false;
+        }
+      }
+    }
+
+    toast('Payment timed out');
+    return false;
+  } catch (err) {
+    console.error('Pay error:', err);
+    if (err.message?.includes('user') || err.message?.includes('User') || err.code === 4001) {
+      toast('Payment cancelled');
+    } else {
+      toast('Payment failed: ' + (err.message || 'unknown'));
+    }
+    return false;
+  }
+}
+
+// ── GoodDollar helpers (SDK-pattern, direct in-app claim) ────────────────
+
+// Get the wallet provider and address (Web3Auth or injected)
+async function getGDProvider() {
+  let provider = null, from = null;
+  if (web3authInstance?.provider) {
+    provider = web3authInstance.provider;
+    const accounts = await provider.request({ method: 'eth_accounts' });
+    from = accounts?.[0];
+  }
+  if (!provider && window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts?.[0]) { provider = window.ethereum; from = accounts[0]; }
+    } catch (_) {}
+  }
+  return { provider, from };
+}
+
+// getWhitelistedRoot(address) → returns root address (zero = not whitelisted)
+async function gdGetWhitelistedRoot(address) {
+  const result = await ethCall(GD_IDENTITY, SEL_GET_WHITELISTED_ROOT + padAddr(address));
+  if (!result || result === '0x' + '0'.repeat(64)) return null;
+  return '0x' + result.slice(26); // extract address from 32-byte return
+}
+
+// Generate face verification link (SDK pattern: sign message + lz-compress params)
+async function gdGenerateFVLink(provider, address) {
+  const nonce = Math.floor(Date.now() / 1000).toString();
+  const message = GD_FV_MSG.replace('<account>', address);
+
+  // Sign the FV message via the wallet
+  const fvSig = await provider.request({
+    method: 'personal_sign',
+    params: [
+      '0x' + Array.from(new TextEncoder().encode(message)).map(b => b.toString(16).padStart(2, '0')).join(''),
+      address
+    ],
+  });
+
+  const params = {
+    account: address,
+    nonce,
+    fvsig: fvSig,
+    chain: 42220,
+    rdu: window.location.href, // redirect back to SubBot after verification
+  };
+
+  // Compress params with lz-string (loaded via CDN)
+  const compressed = LZString.compressToEncodedURIComponent(JSON.stringify(params));
+  return `${GD_IDENTITY_URL}?lz=${compressed}`;
+}
+
+// Check next claim time from UBI scheme
+async function gdNextClaimTime() {
+  const DAY = 86400;
+  const pResult = await ethCall(GD_UBISCHEME, SEL_PERIOD_START);
+  const dResult = await ethCall(GD_UBISCHEME, SEL_CURRENT_DAY);
+  if (!pResult || !dResult) return null;
+  const periodStart = Number(BigInt(pResult));
+  const currentDay = Number(BigInt(dResult));
+  const ref = periodStart + currentDay * DAY;
+  const now = Math.floor(Date.now() / 1000);
+  if (now < ref) return new Date(ref * 1000);
+  return new Date((ref + DAY) * 1000);
+}
+
+// Top wallet with gas via GD faucet if needed
+async function gdTopGasIfNeeded(provider, address) {
+  const canTopResult = await ethCall(GD_FAUCET, SEL_CAN_TOP + padAddr(address));
+  if (!canTopResult || BigInt(canTopResult) === 0n) return;
+  try {
+    await provider.request({
+      method: 'eth_sendTransaction',
+      params: [{ from: address, to: GD_FAUCET, data: SEL_TOP_WALLET + padAddr(address), gas: '0x15F90' }],
+    });
+  } catch (_) {} // gas top is best-effort
+}
+
 async function checkGDStatus(address) {
   const statusEl = document.getElementById('gd-status');
   const claimBtn = document.getElementById('gd-claim-btn');
@@ -94,94 +284,67 @@ async function checkGDStatus(address) {
   verifyLink?.classList.add('hidden');
 
   try {
-    // Check whitelisted with Web3Auth address first
-    let wlResult = await ethCall(GD_IDENTITY, SEL_IS_WHITELISTED + padAddr(address));
-    let isWhitelisted = wlResult && BigInt(wlResult) === 1n;
-    let activeAddr = address;
+    // Use getWhitelistedRoot (SDK pattern) — returns root address or null
+    const root = await gdGetWhitelistedRoot(address);
 
-    // If Web3Auth address isn't verified, try injected wallet (MiniPay / MetaMask)
-    // — the user's GD-verified address is likely their browser wallet, not Web3Auth
-    if (!isWhitelisted && window.ethereum) {
-      try {
-        const injectedAccounts = await window.ethereum.request({ method: 'eth_accounts' });
-        const injectedAddr = injectedAccounts?.[0];
-        if (injectedAddr && injectedAddr.toLowerCase() !== address.toLowerCase()) {
-          const wl2 = await ethCall(GD_IDENTITY, SEL_IS_WHITELISTED + padAddr(injectedAddr));
-          if (wl2 && BigInt(wl2) === 1n) {
-            isWhitelisted = true;
-            activeAddr = injectedAddr;
-            // Store the GD-verified address for claiming
-            localStorage.setItem('gd-verified-addr', injectedAddr);
-          }
+    // Also check G$ token balance
+    const balResult = await ethCall(GD_TOKEN, SEL_BALANCE_OF + padAddr(address));
+    const gdBalance = balResult ? Number(BigInt(balResult)) / 1e18 : 0;
+
+    if (!root) {
+      // Not whitelisted — offer face verification
+      statusEl.innerHTML =
+        `<span class="block mb-2 text-xs font-medium text-main">Verify your identity to claim G$</span>` +
+        `<span class="text-[10px] text-muted block mb-2">Complete a one-time face verification to start claiming daily G$ UBI.</span>`;
+      verifyLink?.classList.remove('hidden');
+      verifyLink?.classList.add('inline-flex');
+      verifyLink.textContent = '';
+      verifyLink.innerHTML = '<i class="fa-solid fa-face-smile text-sm mr-1"></i> Start Face Verification';
+      verifyLink.href = '#';
+      verifyLink.onclick = async (e) => {
+        e.preventDefault();
+        try {
+          const { provider, from } = await getGDProvider();
+          if (!provider || !from) { toast('Connect wallet first'); return; }
+          toast('Sign the verification message…');
+          const fvUrl = await gdGenerateFVLink(provider, from);
+          window.open(fvUrl, '_blank');
+          toast('Complete verification, then return here');
+        } catch (err) {
+          if (err.code === 4001) { toast('Signing cancelled'); return; }
+          toast('Could not start verification');
+          console.error('FV link error:', err);
         }
-      } catch (_) {}
-    }
-
-    // Also check previously stored GD address
-    if (!isWhitelisted) {
-      const storedGD = localStorage.getItem('gd-verified-addr');
-      if (storedGD && storedGD.toLowerCase() !== address.toLowerCase()) {
-        const wl3 = await ethCall(GD_IDENTITY, SEL_IS_WHITELISTED + padAddr(storedGD));
-        if (wl3 && BigInt(wl3) === 1n) {
-          isWhitelisted = true;
-          activeAddr = storedGD;
-        }
-      }
-    }
-
-    if (!isWhitelisted) {
-      // Detect login type — social logins can never have their Web3Auth address verified
-      let w3aData = null;
-      try { w3aData = JSON.parse(localStorage.getItem('web3auth')); } catch (_) {}
-      const isSocialLogin = w3aData?.verifier && w3aData.verifier !== 'wallet';
-
-      if (isSocialLogin) {
-        // Social login: Web3Auth address will never match GD — guide them to link
-        statusEl.innerHTML =
-          `<span class="block mb-2 text-xs font-medium text-main">Link your GoodDollar wallet to claim G$</span>` +
-          `<span class="text-[10px] text-muted block mb-2">Your SubBot login uses a different address than GoodDollar. Paste your GoodWallet address below to link them.</span>` +
-          `<div class="flex gap-1.5"><input id="gd-manual-addr" type="text" placeholder="0x… (from GoodWallet → Profile)" class="flex-1 bg-field border border-edge rounded-lg py-1.5 px-2.5 text-[10px] font-mono text-main"/>` +
-          `<button id="gd-link-manual" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-bold active:scale-95 whitespace-nowrap">Link</button></div>` +
-          `<span class="text-[10px] text-muted block mt-2">Don't have GoodDollar yet?</span>`;
-        verifyLink?.classList.remove('hidden');
-        verifyLink?.classList.add('inline-flex');
-        verifyLink.textContent = '';
-        verifyLink.innerHTML = 'Sign up on GoodWallet <i class="fa-solid fa-arrow-right text-[10px] ml-1"></i>';
-      } else {
-        // Wallet login (MetaMask etc): address should be verified but isn't
-        statusEl.innerHTML =
-          `<span class="block mb-2">This wallet is not GoodDollar verified.</span>` +
-          (window.ethereum ? `<button id="gd-check-injected" class="text-emerald-500 underline text-xs font-bold block mb-1.5">Try another connected wallet</button>` : '') +
-          `<span class="text-[10px] text-muted block mb-1">Or paste a different verified address:</span>` +
-          `<div class="flex gap-1.5 mt-1"><input id="gd-manual-addr" type="text" placeholder="0x..." class="flex-1 bg-field border border-edge rounded-lg py-1.5 px-2.5 text-[10px] font-mono text-main"/>` +
-          `<button id="gd-link-manual" class="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-bold active:scale-95">Link</button></div>`;
-        verifyLink?.classList.remove('hidden');
-        verifyLink?.classList.add('inline-flex');
-      }
-
-      if (document.getElementById('gd-check-injected')) {
-        document.getElementById('gd-check-injected').addEventListener('click', connectGDWallet);
-      }
-      document.getElementById('gd-link-manual')?.addEventListener('click', linkManualGDAddress);
+      };
       return;
     }
 
-    // Check entitlement using the verified address
-    const entResult = await ethCall(GD_UBISCHEME, SEL_CHECK_ENTITLEMENT + padAddr(activeAddr));
-
-    // Also check G$ token balance
-    const balResult = await ethCall(GD_TOKEN, SEL_BALANCE_OF + padAddr(activeAddr));
-    const gdBalance = balResult ? Number(BigInt(balResult)) / 1e18 : 0;
+    // Whitelisted — check entitlement using root address (SDK pattern)
+    const checkAddr = root.toLowerCase() !== address.toLowerCase() ? root : address;
+    const entResult = await ethCall(GD_UBISCHEME, SEL_CHECK_ENTITLEMENT + padAddr(checkAddr));
 
     if (entResult === null) {
-      // Contract reverted — could be new user or unregistered on UBI scheme
+      // checkEntitlement reverted — check localStorage for today's claim
+      const claimedToday = localStorage.getItem('gd-claim-date') === new Date().toDateString();
       claimableEl.textContent = gdBalance > 0 ? gdBalance.toFixed(2) + ' G$' : '';
-      statusEl.textContent = gdBalance > 0
-        ? 'Verified ✓ · Claim via GoodWallet'
-        : 'Verified ✓ · Claim your first G$ on GoodWallet';
-      claimBtn?.classList.remove('hidden');
+      if (claimedToday) {
+        const nextClaim = await gdNextClaimTime();
+        const timeStr = nextClaim ? nextClaim.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'tomorrow';
+        statusEl.textContent = `Already claimed today. Next claim ~${timeStr}`;
+      } else {
+        // Try no-arg checkEntitlement as fallback
+        const entNoArg = await ethCall(GD_UBISCHEME, SEL_CHECK_ENTITLEMENT_NO);
+        if (entNoArg && BigInt(entNoArg) > 0n) {
+          const amount = (Number(BigInt(entNoArg)) / 1e18).toFixed(2);
+          claimableEl.textContent = amount + ' G$';
+          statusEl.textContent = 'You have G$ to claim!';
+          claimBtn?.classList.remove('hidden');
+        } else {
+          statusEl.textContent = 'Verified ✓ · No claimable G$ right now';
+        }
+      }
     } else {
-      const entitlement = entResult ? BigInt(entResult) : 0n;
+      const entitlement = BigInt(entResult);
       if (entitlement > 0n) {
         const amount = (Number(entitlement) / 1e18).toFixed(2);
         claimableEl.textContent = amount + ' G$';
@@ -189,7 +352,10 @@ async function checkGDStatus(address) {
         claimBtn?.classList.remove('hidden');
       } else {
         claimableEl.textContent = gdBalance > 0 ? gdBalance.toFixed(2) + ' G$' : '';
-        statusEl.textContent = 'Already claimed today. Come back tomorrow!';
+        const nextClaim = await gdNextClaimTime();
+        const timeStr = nextClaim ? nextClaim.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'tomorrow';
+        statusEl.textContent = `Already claimed today. Next claim ~${timeStr}`;
+        localStorage.setItem('gd-claim-date', new Date().toDateString());
       }
     }
   } catch (err) {
@@ -202,43 +368,22 @@ async function claimGD() {
   const btn = document.getElementById('gd-claim-btn');
   const statusEl = document.getElementById('gd-status');
 
-  btn.textContent = 'Claiming…';
+  btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-sm"></i> Claiming…';
   btn.disabled = true;
 
   try {
-    // Determine which provider and address to use for claiming
-    const storedGD = localStorage.getItem('gd-verified-addr');
-    let provider = null;
-    let from = null;
-
-    // If the verified address is a linked GD address (social login),
-    // we must use window.ethereum (MetaMask/MiniPay) to sign the tx
-    if (storedGD && window.ethereum) {
-      try {
-        const injected = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        if (injected?.[0]?.toLowerCase() === storedGD.toLowerCase()) {
-          provider = window.ethereum;
-          from = injected[0];
-        }
-      } catch (_) {}
-    }
-
-    // Fall back to Web3Auth provider (works for MetaMask login via Web3Auth)
-    if (!provider && web3authInstance?.provider) {
-      provider = web3authInstance.provider;
-      const accounts = await provider.request({ method: 'eth_accounts' });
-      from = accounts?.[0];
-    }
-
+    const { provider, from } = await getGDProvider();
     if (!provider || !from) {
-      // No local wallet available — open GoodWallet to claim directly
-      window.open('https://goodwallet.xyz/en', '_blank');
-      toast('Claim your G$ on GoodWallet, then come back');
+      toast('Connect wallet first');
       btn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i> Claim G$';
       btn.disabled = false;
       return;
     }
 
+    // Top up gas via faucet if needed (best-effort)
+    await gdTopGasIfNeeded(provider, from);
+
+    // Send claim() transaction directly
     const txHash = await provider.request({
       method: 'eth_sendTransaction',
       params: [{ from, to: GD_UBISCHEME, data: SEL_CLAIM, gas: '0x30D40' }], // 200k gas
@@ -259,67 +404,26 @@ async function claimGD() {
     }
 
     if (receipt?.status === '0x1') {
-      statusEl.innerHTML = '<span style="color:#00C58E;font-weight:700">✓ Claimed! G$ incoming.</span>';
+      localStorage.setItem('gd-claim-date', new Date().toDateString());
+      statusEl.innerHTML = '<span class="text-emerald-500 font-bold">✓ Claimed! G$ added to your wallet.</span>';
       btn.classList.add('hidden');
       document.getElementById('gd-claimable').textContent = '';
       toast('G$ claimed successfully!');
-      // Refresh after a moment
-      setTimeout(() => checkGDStatus(accounts[0]), 3000);
+      setTimeout(() => { fetchGDWalletBalance(); checkGDStatus(from); }, 3000);
     } else {
-      statusEl.textContent = 'Transaction failed.';
-      btn.textContent = 'Retry Claim';
+      statusEl.textContent = 'Transaction failed — try again.';
+      btn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i> Retry';
       btn.disabled = false;
     }
   } catch (err) {
     console.error('GD claim error:', err);
-    if (err.message?.includes('user') || err.message?.includes('User')) {
+    if (err.message?.includes('user') || err.message?.includes('User') || err.code === 4001) {
       statusEl.textContent = 'Claim cancelled.';
     } else {
       statusEl.textContent = 'Claim failed: ' + (err.message || 'unknown error');
     }
-    btn.textContent = 'Retry Claim';
+    btn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i> Retry';
     btn.disabled = false;
-  }
-}
-
-async function connectGDWallet() {
-  if (!window.ethereum) {
-    toast('No wallet detected. Install MetaMask or use MiniPay.');
-    return;
-  }
-  try {
-    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-    const addr = accounts?.[0];
-    if (!addr) { toast('No account found'); return; }
-
-    const wl = await ethCall(GD_IDENTITY, SEL_IS_WHITELISTED + padAddr(addr));
-    if (wl && BigInt(wl) === 1n) {
-      localStorage.setItem('gd-verified-addr', addr);
-      toast('GoodDollar identity verified!');
-      checkGDStatus(addr);
-    } else {
-      toast('This wallet is not GoodDollar verified');
-    }
-  } catch (err) {
-    toast('Could not connect wallet');
-  }
-}
-
-async function linkManualGDAddress() {
-  const input = document.getElementById('gd-manual-addr');
-  const addr = input?.value?.trim();
-  if (!addr || !/^0x[0-9a-fA-F]{40}$/.test(addr)) { toast('Enter a valid wallet address'); return; }
-  try {
-    const wl = await ethCall(GD_IDENTITY, SEL_IS_WHITELISTED + padAddr(addr));
-    if (wl && BigInt(wl) === 1n) {
-      localStorage.setItem('gd-verified-addr', addr);
-      toast('GoodDollar identity linked!');
-      checkGDStatus(addr);
-    } else {
-      toast('This address is not GoodDollar verified');
-    }
-  } catch (_) {
-    toast('Could not verify address');
   }
 }
 
@@ -397,8 +501,8 @@ async function openWeb3AuthModal() {
         if (directAccounts?.[0] && directAccounts[0].toLowerCase() !== address.toLowerCase()) {
           console.log('[SubBot] Web3Auth provider address:', address, '| MetaMask address:', directAccounts[0]);
           // Prefer the MetaMask address if it's GD-verified
-          const wl = await ethCall(GD_IDENTITY, SEL_IS_WHITELISTED + padAddr(directAccounts[0]));
-          if (wl && BigInt(wl) === 1n) {
+          const root = await gdGetWhitelistedRoot(directAccounts[0]);
+          if (root) {
             localStorage.setItem('gd-verified-addr', directAccounts[0]);
           }
         }
@@ -559,7 +663,7 @@ function showScreen(name) {
   if (name === 'credits')       refreshCredits();
   if (name === 'alerts')        renderAlerts();
   if (name === 'settings')      refreshSettings();
-  if (name === 'audit')         runAudit();
+  if (name === 'audit')         runAudit(false);
 }
 
 // ── Event delegation ──────────────────────────────────────────────────────
@@ -689,8 +793,8 @@ function refreshDashboard() {
     hdr.textContent = subs.length ? `● ${subs.length} subs` : '● No data';
   }
 
-  const strip = document.getElementById('strip-balance');
-  if (strip) strip.textContent = (state.balance || 0).toFixed(2) + ' G$';
+  // Update strip balance from wallet
+  fetchGDWalletBalance();
 
   // Renewals list
   const renewalDiv = document.getElementById('renewals-list');
@@ -849,7 +953,11 @@ function editSub(id) {
 }
 
 // ── Audit ─────────────────────────────────────────────────────────────────
-function runAudit() {
+async function runAudit(requirePayment = true) {
+  if (requirePayment) {
+    const paid = await payForAction('audit');
+    if (!paid) return;
+  }
   const subs    = state.subscriptions.filter(s => s.status === 'active');
   const monthly = subs.reduce((sum, s) => sum + (s.monthly_cost_usd || s.monthly_cost || 0), 0);
   const currencies = subs.map(s => s.currency || 'USD');
@@ -949,7 +1057,10 @@ function renderAlerts() {
     : '<p class="text-xs text-muted text-center py-3">All subscriptions look healthy!</p>';
 }
 
-function draftEmail(serviceName) {
+async function draftEmail(serviceName) {
+  const paid = await payForAction('negotiate');
+  if (!paid) return;
+
   const body = `Subject: Cancellation Request – Possible Retention Offer?\n\nHi team,\n\nI've been a loyal ${serviceName} subscriber but I'm reviewing my AI/SaaS budget. Before I cancel, I wanted to reach out — do you have any retention offers or discounts available for existing subscribers?\n\nThank you,\n[Your Name]`;
   document.getElementById('neg-to').value      = `support@${serviceName.toLowerCase().replace(/\s/g, '')}.com`;
   document.getElementById('neg-subject').value = `Cancellation / Discount Request — ${serviceName}`;
@@ -969,14 +1080,12 @@ function copyNegotiationEmail() {
 
 // ── Credits ───────────────────────────────────────────────────────────────
 function refreshCredits() {
-  document.getElementById('credits-balance').textContent = (state.balance || 0).toFixed(2);
-  renderTxHistory();
   fetchGDWalletBalance();
+  renderTxHistory();
 }
 
 async function fetchGDWalletBalance() {
   const el = document.getElementById('gd-wallet-balance');
-  if (!el) return;
 
   // Use stored GD address, or Web3Auth address, or injected wallet
   const storedGD = localStorage.getItem('gd-verified-addr');
@@ -993,10 +1102,16 @@ async function fetchGDWalletBalance() {
     const result = await ethCall(GD_TOKEN, SEL_BALANCE_OF + padAddr(addr));
     if (result) {
       const balance = Number(BigInt(result)) / 1e18; // G$ has 18 decimals
-      el.textContent = balance.toFixed(2);
+      const balStr = balance.toFixed(2);
+      if (el) el.textContent = balStr;
+      // Update all balance displays
+      const creditsEl = document.getElementById('credits-balance');
+      if (creditsEl) creditsEl.textContent = balStr;
+      const stripEl = document.getElementById('strip-balance');
+      if (stripEl) stripEl.textContent = balStr + ' G$';
     }
   } catch (_) {
-    el.textContent = '—';
+    if (el) el.textContent = '—';
   }
 }
 
@@ -1137,6 +1252,9 @@ function showAlertBadge() {
 
 // ── Export ────────────────────────────────────────────────────────────────
 async function exportCSV() {
+  const paid = await payForAction('export');
+  if (!paid) return;
+
   try {
     const r = await fetch(`${API}/export`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ userId: userId() }) });
     if (r.ok) { toast('CSV exported!'); return; }
@@ -1205,6 +1323,10 @@ async function runGmailScan() {
   const email    = document.getElementById('gmail-scan-email')?.value?.trim();
   const password = document.getElementById('gmail-scan-password')?.value?.trim();
   if (!email || !password) { toast('Email and App Password required'); return; }
+
+  // Pay for scan
+  const paid = await payForAction('scan');
+  if (!paid) return;
 
   const btn = document.querySelector('[data-action="runGmailScan"]');
   const origText = btn?.innerHTML;
@@ -1474,7 +1596,7 @@ async function init() {
     waitForSDK().then(() => openWeb3AuthModal());
   }
 
-  // Re-check GD status when user returns from GoodWallet verification tab
+  // Re-check GD status when user returns from face verification tab
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'visible') {
       w3aGet(w3a => {

@@ -17,6 +17,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal@10.16.0/dist/modal.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js" defer></script>
 <style>
   :root {
     --bg-page: #f4f4f5;
@@ -146,7 +147,7 @@
       </div>
       <div class="glass p-3 rounded-2xl flex items-center gap-4">
         <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bolt text-lg text-amber-500"></i></div>
-        <div class="text-left"><span class="text-xs font-bold uppercase tracking-widest text-amber-500 block">DeFi yield</span><span class="text-xs text-muted">Deposit G$ · yield runs bot forever</span></div>
+        <div class="text-left"><span class="text-xs font-bold uppercase tracking-widest text-amber-500 block">Free G$</span><span class="text-xs text-muted">Claim daily G$ UBI · pays for actions</span></div>
       </div>
     </div>
     <div class="w-full">
@@ -186,9 +187,9 @@
       <button data-action="copyWallet" class="text-muted hover:text-main p-1" title="Copy"><i class="fa-regular fa-copy text-xs"></i></button>
     </div>
     <div id="credits-strip" class="flex items-center justify-between px-4 py-3 bg-panel rounded-xl border border-edge">
-      <div class="flex items-center gap-2"><i class="fa-solid fa-wallet text-amber-500 text-lg"></i><span class="text-xs font-bold text-muted uppercase tracking-wider">Vault Credits</span></div>
+      <div class="flex items-center gap-2"><i class="fa-solid fa-wallet text-amber-500 text-lg"></i><span class="text-xs font-bold text-muted uppercase tracking-wider">Wallet Balance</span></div>
       <span id="strip-balance" class="text-sm font-mono font-bold text-main">— G$</span>
-      <button data-action="nav" data-target="credits" class="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-white px-3 py-1 rounded-lg active:scale-95 transition-colors">Claim G$</button>
+      <button data-action="nav" data-target="credits" class="text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg active:scale-95 transition-colors">Get G$</button>
     </div>
     <div class="grid grid-cols-2 gap-3">
       <button data-action="showGmailModal" class="signature-glow font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
@@ -290,14 +291,11 @@
         </div>
       </div>
       <div class="mt-3">
-        <span class="text-[10px] text-muted uppercase tracking-widest font-bold">Vault Credits</span>
+        <span class="text-[10px] text-muted uppercase tracking-widest font-bold">Wallet Balance</span>
         <div class="flex items-baseline gap-2"><h1 id="credits-balance" class="text-3xl font-bold font-mono text-main leading-none">0.00</h1><span class="text-amber-500 font-mono font-bold">G$</span></div>
+        <span id="gd-wallet-balance" class="hidden">—</span>
       </div>
-      <div id="gd-wallet-balance-row" class="mt-2 flex items-center justify-between">
-        <div><span class="text-[10px] text-muted uppercase tracking-widest font-bold">Wallet Balance</span>
-        <div class="flex items-baseline gap-1"><span id="gd-wallet-balance" class="text-lg font-bold font-mono text-emerald-500">—</span><span class="text-emerald-500 font-mono text-xs font-bold">G$</span></div></div>
-      </div>
-      <p class="text-[10px] text-muted mt-2">Vault powered by SubBot · wallet balance is on-chain</p>
+      <p class="text-[10px] text-muted mt-2">Pay-per-action · G$ on Celo mainnet</p>
     </div>
 
     <!-- Claim G$ -->
@@ -312,7 +310,7 @@
         <button id="gd-claim-btn" data-action="claimGD" class="hidden w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform bg-emerald-500 hover:bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2">
           <i class="fa-solid fa-hand-holding-dollar text-sm"></i> Claim G$
         </button>
-        <a id="gd-verify-link" href="https://goodwallet.xyz/en" target="_blank" rel="noopener" class="hidden text-xs font-bold text-emerald-500 hover:underline inline-flex items-center gap-1">Get Verified <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+        <a id="gd-verify-link" href="#" class="hidden text-xs font-bold text-emerald-500 hover:underline inline-flex items-center gap-1">Start Face Verification <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
       </div>
     </section>
 
