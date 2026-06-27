@@ -409,19 +409,19 @@ function refreshDashboard() {
     .slice(0, 3);
 
   if (!upcoming.length) {
-    renewalDiv.innerHTML = '<div class="text-xs text-on-surface-variant text-center py-3">No upcoming renewals.</div>';
+    renewalDiv.innerHTML = '<div class="text-xs text-muted text-center py-3">No upcoming renewals.</div>';
     return;
   }
   renewalDiv.innerHTML = upcoming.map(s => {
     const days    = Math.ceil((new Date(s.next_renewal) - now) / 86400000);
     const color   = days <= 3 ? 'bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)]' : days <= 7 ? 'bg-amber-400' : 'bg-tertiary';
     const dateStr = new Date(s.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return `<div class="bg-surface-container-low p-3 rounded-xl flex items-center justify-between">
+    return `<div class="bg-panel p-3 rounded-xl flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-1.5 h-1.5 rounded-full ${color}"></div>
-        <div><p class="text-sm font-semibold">${s.name}</p><p class="text-[10px] text-on-surface-variant font-mono">${dateStr} · $${s.monthly_cost}</p></div>
+        <div><p class="text-sm font-semibold">${s.name}</p><p class="text-[10px] text-muted font-mono">${dateStr} · $${s.monthly_cost}</p></div>
       </div>
-      <span class="material-symbols-outlined text-on-surface-variant text-sm">chevron_right</span>
+      <i class="fa-solid fa-chevron-right text-muted text-[10px]"></i>
     </div>`;
   }).join('');
 }
@@ -435,10 +435,10 @@ function setFilter(f) {
     const on = c.dataset.filter === f;
     c.classList.toggle('bg-primary-container', on);
     c.classList.toggle('text-on-primary', on);
-    c.classList.toggle('bg-surface-container', !on);
-    c.classList.toggle('text-on-surface-variant', !on);
+    c.classList.toggle('bg-panel', !on);
+    c.classList.toggle('text-muted', !on);
     c.classList.toggle('border', !on);
-    c.classList.toggle('border-outline-variant/10', !on);
+    c.classList.toggle('border-edge', !on);
   });
   renderSubs();
 }
@@ -450,26 +450,26 @@ function renderSubs() {
   if (currentFilter !== 'all') subs = subs.filter(s => (s.category || '').toLowerCase() === currentFilter);
   if (searchQ) subs = subs.filter(s => s.name.toLowerCase().includes(searchQ));
   if (!subs.length) {
-    list.innerHTML = '<div class="text-xs text-on-surface-variant text-center py-6">No subscriptions found.</div>';
+    list.innerHTML = '<div class="text-xs text-muted text-center py-6">No subscriptions found.</div>';
     return;
   }
   list.innerHTML = subs.map(s => {
     const health  = s.health_score || 0;
     const hColor  = health >= 80 ? 'text-tertiary' : health >= 50 ? 'text-amber-400' : 'text-error';
-    const initBg  = s.category === 'ai' ? 'bg-surface-container-highest text-primary' : 'bg-surface-container-highest text-secondary';
+    const initBg  = s.category === 'ai' ? 'bg-panel text-primary' : 'bg-panel text-secondary';
     const cost    = s.monthly_cost_usd || s.monthly_cost || 0;
     const cur     = (s.currency && s.currency !== 'USD') ? ` (${s.currency})` : '';
-    return `<div class="h-[72px] glass rounded-xl px-3 flex items-center gap-3 border border-outline-variant/10 hover:bg-surface-bright/40 transition-all cursor-pointer">
+    return `<div class="h-[72px] glass rounded-xl px-3 flex items-center gap-3 border border-edge hover:bg-panel/40 transition-all cursor-pointer">
       <div class="w-10 h-10 rounded-lg ${initBg} flex items-center justify-center font-bold text-lg flex-shrink-0">${s.name.charAt(0)}</div>
       <div class="flex-1 min-w-0">
         <div class="flex justify-between items-start">
           <h3 class="font-semibold text-sm truncate">${s.name}</h3>
-          <span class="font-mono text-sm font-medium">$${cost}<span class="text-[10px] text-on-surface-variant">/mo${cur}</span></span>
+          <span class="font-mono text-sm font-medium">$${cost}<span class="text-[10px] text-muted">/mo${cur}</span></span>
         </div>
         <div class="flex items-center gap-2 mt-0.5">
           <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">${s.category || 'SaaS'}</span>
           <span class="${hColor} text-[10px] font-mono">♥ ${health}</span>
-          ${s.next_renewal ? `<span class="text-[10px] text-on-surface-variant ml-auto">Renew: ${new Date(s.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>` : ''}
+          ${s.next_renewal ? `<span class="text-[10px] text-muted ml-auto">Renew: ${new Date(s.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>` : ''}
         </div>
       </div>
     </div>`;
@@ -493,8 +493,8 @@ function runAudit() {
 
   const oDiv = document.getElementById('overlaps-list');
   oDiv.innerHTML = overlaps.length
-    ? overlaps.map(([cat, names]) => `<div class="bg-surface-container p-3 rounded-xl border-l-2 border-error/50 text-xs"><p class="font-medium">${cat.toUpperCase()} overlap</p><p class="text-on-surface-variant mt-0.5">${names.join(' + ')}</p></div>`).join('')
-    : '<p class="text-xs text-on-surface-variant text-center py-2">No overlaps detected. 🎉</p>';
+    ? overlaps.map(([cat, names]) => `<div class="bg-panel p-3 rounded-xl border-l-2 border-error/50 text-xs"><p class="font-medium">${cat.toUpperCase()} overlap</p><p class="text-muted mt-0.5">${names.join(' + ')}</p></div>`).join('')
+    : '<p class="text-xs text-muted text-center py-2">No overlaps detected. 🎉</p>';
 
   const rows = document.getElementById('health-rows');
   rows.innerHTML = subs.map(s => {
@@ -504,10 +504,10 @@ function runAudit() {
     return `<div class="flex items-center justify-between px-3 py-2.5">
       <span class="text-xs truncate flex-1">${s.name}</span>
       <span class="text-xs font-mono mx-2">$${s.monthly_cost_usd || s.monthly_cost}</span>
-      <div class="w-16 bg-surface-container rounded-full h-1.5 mr-2"><div class="${bc} h-1.5 rounded-full" style="width:${h}%"></div></div>
+      <div class="w-16 bg-panel rounded-full h-1.5 mr-2"><div class="${bc} h-1.5 rounded-full" style="width:${h}%"></div></div>
       <span class="text-[10px] whitespace-nowrap">${badge}</span>
     </div>`;
-  }).join('') || '<p class="text-xs text-on-surface-variant text-center py-3">No data.</p>';
+  }).join('') || '<p class="text-xs text-muted text-center py-3">No data.</p>';
 
   const wins = [];
   overlaps.forEach(([cat, names]) => {
@@ -519,8 +519,8 @@ function runAudit() {
 
   const qd = document.getElementById('quick-wins');
   qd.innerHTML = wins.length
-    ? wins.map(w => `<div class="bg-surface-container-low p-3 rounded-xl border-l-2 border-primary text-xs">${w}</div>`).join('')
-    : '<p class="text-xs text-on-surface-variant text-center py-2">No easy wins — you\'re well optimised!</p>';
+    ? wins.map(w => `<div class="bg-panel p-3 rounded-xl border-l-2 border-primary text-xs">${w}</div>`).join('')
+    : '<p class="text-xs text-muted text-center py-2">No easy wins — you\'re well optimised!</p>';
 }
 
 // ── Alerts ────────────────────────────────────────────────────────────────
@@ -532,7 +532,7 @@ function renderAlerts() {
   const tl = document.getElementById('alerts-timeline');
   if (!tl) return;
   if (!upcoming.length) {
-    tl.innerHTML = '<p class="text-xs text-on-surface-variant text-center py-3">No upcoming renewals.</p>';
+    tl.innerHTML = '<p class="text-xs text-muted text-center py-3">No upcoming renewals.</p>';
   } else {
     tl.innerHTML = upcoming.map(s => {
       const days     = Math.ceil((new Date(s.next_renewal) - now) / 86400000);
@@ -543,13 +543,13 @@ function renderAlerts() {
       const d = new Date(s.next_renewal);
       return `<div class="relative flex items-start gap-4">
         <div class="flex flex-col items-end pt-1 w-8 flex-shrink-0">
-          <span class="font-mono text-[10px] text-on-surface-variant font-bold">${d.toLocaleString('en-US', { month: 'short' })}</span>
-          <span class="font-mono text-lg text-on-surface leading-none">${d.getDate()}</span>
+          <span class="font-mono text-[10px] text-muted font-bold">${d.toLocaleString('en-US', { month: 'short' })}</span>
+          <span class="font-mono text-lg text-main leading-none">${d.getDate()}</span>
         </div>
         <div class="relative z-10 mt-2.5 flex-shrink-0"><div class="w-3 h-3 rounded-full ${dotColor} ring-4"></div></div>
-        <div class="flex-1 bg-surface-container rounded-xl p-3 border border-outline-variant/10">
+        <div class="flex-1 bg-panel rounded-xl p-3 border border-edge">
           <div class="flex justify-between items-start">
-            <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-on-surface-variant">${s.provider || ''}</p></div>
+            <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-muted">${s.provider || ''}</p></div>
             <span class="font-mono text-sm">$${s.monthly_cost}</span>
           </div>
           <div class="mt-1.5">${urgLabel}</div>
@@ -562,16 +562,16 @@ function renderAlerts() {
   if (!neg) return;
   const eligible = state.subscriptions.filter(s => (s.health_score || 0) < 70 && s.status === 'active');
   neg.innerHTML = eligible.length
-    ? eligible.map(s => `<div class="bg-surface-container rounded-2xl p-4 border border-outline-variant/10">
+    ? eligible.map(s => `<div class="bg-panel rounded-2xl p-4 border border-edge">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-lg bg-surface-container-highest flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
+          <div class="w-10 h-10 rounded-lg bg-panel flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
           <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-tertiary">Eligible for discount</p></div>
         </div>
         <button data-action="draftEmail" data-service="${s.name}" class="w-full py-2 px-4 rounded-xl border border-secondary text-secondary text-xs font-semibold flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-sm">mail</span> Draft Email
+          <i class="fa-solid fa-envelope text-sm"></i> Draft Email
         </button>
       </div>`).join('')
-    : '<p class="text-xs text-on-surface-variant text-center py-3">All subscriptions look healthy!</p>';
+    : '<p class="text-xs text-muted text-center py-3">All subscriptions look healthy!</p>';
 }
 
 function draftEmail(serviceName) {
@@ -605,21 +605,21 @@ function renderTxHistory() {
   const div = document.getElementById('tx-history');
   if (!div) return;
   if (!state.txHistory?.length) {
-    div.innerHTML = '<p class="text-xs text-on-surface-variant text-center py-3">No transactions yet.</p>';
+    div.innerHTML = '<p class="text-xs text-muted text-center py-3">No transactions yet.</p>';
     return;
   }
-  const icons = { scan: 'radar', audit: 'analytics', negotiate: 'mail', deduct: 'payments', deposit: 'account_balance_wallet', export: 'download' };
+  const icons = { scan: 'fa-satellite-dish', audit: 'fa-chart-pie', negotiate: 'fa-envelope', deduct: 'fa-credit-card', deposit: 'fa-wallet', export: 'fa-download' };
   div.innerHTML = state.txHistory.slice(0, 20).map(tx => {
     const isDeposit = tx.type === 'deposit';
-    const icon      = icons[tx.action || tx.type] || 'payments';
+    const icon      = icons[tx.action || tx.type] || 'fa-credit-card';
     const amt       = isDeposit ? `+${tx.amount?.toFixed(2)} cUSD` : `-${tx.amount?.toFixed(2)} cUSD`;
     const amtColor  = isDeposit ? 'text-tertiary' : 'text-error';
     const label     = tx.action ? (tx.action.charAt(0).toUpperCase() + tx.action.slice(1)) : 'Deposit';
     const date      = new Date(tx.ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return `<div class="flex items-center justify-between p-3 rounded-xl bg-surface-container-lowest/50 border border-outline-variant/5">
+    return `<div class="flex items-center justify-between p-3 rounded-xl bg-panel border border-edge">
       <div class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center"><span class="material-symbols-outlined text-primary text-lg">${icon}</span></div>
-        <div><p class="text-xs font-medium">${label}</p><p class="text-[10px] text-on-surface-variant font-mono">${date}</p></div>
+        <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center"><i class="fa-solid ${icon} text-primary text-sm"></i></div>
+        <div><p class="text-xs font-medium">${label}</p><p class="text-[10px] text-muted font-mono">${date}</p></div>
       </div>
       <span class="text-xs font-mono font-bold ${amtColor}">${amt}</span>
     </div>`;
@@ -767,7 +767,7 @@ function togglePref(btn) {
   const on = btn.dataset.on !== 'true';
   btn.dataset.on = String(on);
   btn.classList.toggle('bg-primary/20', on);
-  btn.classList.toggle('bg-surface-container-highest', !on);
+  btn.classList.toggle('bg-panel', !on);
   const dot = btn.querySelector('div');
   dot.classList.toggle('bg-primary', on);
   dot.classList.toggle('bg-outline', !on);

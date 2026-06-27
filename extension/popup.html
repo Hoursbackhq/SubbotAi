@@ -3,469 +3,416 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SubBot</title>
+<title>SubBot — AI Subscription Manager</title>
+<link rel="manifest" href="manifest.json"/>
+<meta name="theme-color" content="#171717"/>
 <script src="tailwind.js"></script>
 <script src="tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <style>
-  body{font-family:'Inter',sans-serif;background:#10141a;color:#dfe2eb;width:400px;min-height:580px;max-height:580px;overflow:hidden;margin:0;}
-  .screen{display:none;width:400px;min-height:580px;flex-direction:column;position:relative;}
-  .screen.active{display:flex;}
-  .screen-scroll{overflow-y:auto;flex:1;max-height:calc(580px - 52px - 56px);}
-  .screen-scroll::-webkit-scrollbar{width:4px;}
-  .screen-scroll::-webkit-scrollbar-thumb{background:#31353c;border-radius:10px;}
-  .material-symbols-outlined{font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24;}
-  .glass{background:rgba(28,32,38,0.7);backdrop-filter:blur(12px);}
-  .gold-border{border:1px solid rgba(251,191,36,0.3);}
-  .amber-glow{box-shadow:0 0 15px rgba(251,191,36,0.15);}
-  .pulse-dot{animation:pulse-anim 2s cubic-bezier(0.4,0,0.6,1) infinite;}
-  @keyframes pulse-anim{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.2);}}
-  .logo-glow{filter:drop-shadow(0 0 15px rgba(34,211,238,0.4));}
-  .signature-glow{background:linear-gradient(135deg,#22d3ee 0%,#00cbe6 100%);box-shadow:0 0 20px rgba(34,211,238,0.3);}
-  #toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(20px);background:#1c2026;border:1px solid #464554;color:#dfe2eb;padding:8px 16px;border-radius:999px;font-size:12px;opacity:0;transition:all 0.3s;pointer-events:none;z-index:200;}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-  .modal-overlay{display:none;position:fixed;inset:0;z-index:100;background:rgba(10,14,20,0.8);backdrop-filter:blur(4px);align-items:flex-end;justify-content:center;padding:16px;}
-  .modal-overlay.active{display:flex;}
-  .nav-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;color:#64748b;cursor:pointer;padding:4px 8px;border-radius:12px;transition:all 0.15s;}
-  .nav-tab.active-tab{color:#22d3ee;background:rgba(34,211,238,0.1);}
-  .nav-tab span.label{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;}
+  :root {
+    --bg-page: #f4f4f5;
+    --bg-app: #ffffff;
+    --bg-header: rgba(255, 255, 255, 0.85);
+    --bg-nav: rgba(255, 255, 255, 0.95);
+    --bg-card: #f9fafb;
+    --bg-card-hover: #f3f4f6;
+    --bg-input: #f3f4f6;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border-color: #cbd5e1;
+    --accent: #0891b2;
+    --accent-glow: rgba(8, 145, 178, 0.15);
+    --scrollbar-thumb: #cbd5e1;
+  }
+  html.dark {
+    --bg-page: #121212;
+    --bg-app: #171717;
+    --bg-header: rgba(23, 23, 23, 0.85);
+    --bg-nav: rgba(23, 23, 23, 0.95);
+    --bg-card: #212121;
+    --bg-card-hover: #2f2f2f;
+    --bg-input: #2f2f2f;
+    --text-main: #ececf1;
+    --text-muted: #8e8ea0;
+    --border-color: #383838;
+    --accent: #22d3ee;
+    --accent-glow: rgba(34, 211, 238, 0.25);
+    --scrollbar-thumb: #424242;
+  }
+
+  html, body { margin:0; padding:0; height:100%; background: var(--bg-page); transition: background 0.3s; }
+  body { font-family:'Inter',sans-serif; color: var(--text-main); width:400px; height:600px; overflow:hidden; }
+  #app { position:relative; width:400px; height:600px; overflow:hidden; background: var(--bg-app); border: 1px solid var(--border-color); transition: background 0.3s, border-color 0.3s; }
+  .screen { display:none; width:100%; height:100%; flex-direction:column; position:relative; background: var(--bg-app); }
+  .screen.active { display:flex; }
+  .screen-scroll { overflow-y:auto; flex:1; max-height:calc(100% - 52px - 56px); }
+  .screen-scroll::-webkit-scrollbar { width:4px; }
+  .screen-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius:10px; }
+  
+  .glass { background: var(--bg-card); border: 1px solid var(--border-color); backdrop-filter:blur(16px); transition: all 0.2s; }
+  .gold-border { border:1px solid rgba(251,191,36,0.4); }
+  .amber-glow { box-shadow:0 0 25px rgba(251,191,36,0.15); }
+  .pulse-dot { animation:pulse-anim 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+  @keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.2);} }
+  .logo-glow { filter:drop-shadow(0 0 18px var(--accent-glow)); }
+  .signature-glow { background:linear-gradient(135deg,#06b6d4 0%,#0891b2 100%); color:#ffffff; box-shadow:0 0 25px var(--accent-glow); }
+  html.dark .signature-glow { background:linear-gradient(135deg,#22d3ee 0%,#06b6d4 100%); color:#020617; }
+  
+  #toast { position:absolute; bottom:70px; left:50%; transform:translateX(-50%) translateY(20px); background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-main); padding:8px 16px; border-radius:999px; font-size:12px; font-weight:600; opacity:0; transition:all 0.3s; pointer-events:none; z-index:200; white-space:nowrap; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .modal-overlay { display:none; position:absolute; inset:0; z-index:100; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:flex-end; justify-content:center; padding:16px; }
+  .modal-overlay.active { display:flex; }
+  
+  .nav-tab { display:flex; flex-direction:column; align-items:center; justify-content:center; color: var(--text-muted); cursor:pointer; padding:4px 8px; border-radius:12px; transition:all 0.15s; }
+  .nav-tab.active-tab { color: var(--accent); background: var(--accent-glow); font-weight:600; }
+  .nav-tab span.label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-top:3px; }
 </style>
 </head>
 <body>
+<div id="app">
 
 <!-- SHARED HEADER -->
-<header id="app-header" class="hidden fixed top-0 left-0 w-full z-50 flex justify-between items-center px-4 bg-slate-900/70 backdrop-blur-xl border-b border-white/5 h-[52px] shadow-[0_0_20px_rgba(34,211,238,0.15)]">
-  <div class="flex items-center gap-2 text-cyan-400 font-bold">
-    <span class="material-symbols-outlined">smart_toy</span>
-    <span class="font-semibold text-lg tracking-tight">SubBot</span>
-    <span id="header-status" class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-normal">● No data</span>
+<header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center px-4 border-b border-edge h-[52px] shadow-sm" style="background: var(--bg-header); backdrop-filter: blur(12px);">
+  <div class="flex items-center gap-2 font-bold text-primary">
+    <i class="fa-solid fa-robot text-xl"></i>
+    <span class="font-bold text-lg tracking-tight text-main">SubBot</span>
+    <span id="header-status" class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-panel text-muted font-normal border border-edge">● Telegram Bot</span>
   </div>
   <div class="flex items-center gap-1">
-    <button data-action="refreshData" class="text-slate-400 hover:bg-slate-800/50 p-2 rounded-full transition-colors"><span class="material-symbols-outlined text-sm">sync</span></button>
-    <button data-action="nav" data-target="settings" class="text-slate-400 hover:bg-slate-800/50 p-2 rounded-full transition-colors"><span class="material-symbols-outlined">settings</span></button>
+    <button id="theme-toggle-btn" onclick="document.documentElement.classList.toggle('dark');" class="text-muted hover:text-main hover:bg-panel p-2 rounded-full transition-colors" title="Toggle Theme"><i class="fa-solid fa-circle-half-stroke text-base"></i></button>
+    <button data-action="refreshData" class="text-muted hover:text-main hover:bg-panel p-2 rounded-full transition-colors" title="Refresh"><i class="fa-solid fa-rotate-right text-base"></i></button>
+    <button data-action="nav" data-target="settings" class="text-muted hover:text-main hover:bg-panel p-2 rounded-full transition-colors" title="Settings"><i class="fa-solid fa-gear text-base"></i></button>
   </div>
 </header>
 
 <!-- SHARED BOTTOM NAV -->
-<nav id="app-nav" class="hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-1 pb-2 pt-1 bg-slate-900/80 backdrop-blur-lg border-t border-white/5 shadow-2xl rounded-t-xl h-[56px]">
+<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 flex justify-around items-center px-1 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[56px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
   <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard">
-    <span class="material-symbols-outlined">dashboard</span><span class="label">Dash</span>
+    <i class="fa-solid fa-gauge-high text-lg"></i><span class="label">Dash</span>
   </div>
   <div class="nav-tab" data-action="nav" data-target="subscriptions" data-tab="subscriptions">
-    <span class="material-symbols-outlined">subscriptions</span><span class="label">Subs</span>
+    <i class="fa-solid fa-credit-card text-lg"></i><span class="label">Subs</span>
   </div>
   <div class="nav-tab" data-action="nav" data-target="audit" data-tab="audit">
-    <span class="material-symbols-outlined">analytics</span><span class="label">Audit</span>
+    <i class="fa-solid fa-chart-pie text-lg"></i><span class="label">Audit</span>
   </div>
   <div class="nav-tab" data-action="nav" data-target="alerts" data-tab="alerts">
-    <span class="material-symbols-outlined">notifications</span><span class="label">Alerts</span>
+    <i class="fa-solid fa-bell text-lg"></i><span class="label">Alerts</span>
   </div>
   <div class="nav-tab" data-action="nav" data-target="credits" data-tab="credits">
-    <span class="material-symbols-outlined">payments</span><span class="label">Credits</span>
+    <i class="fa-solid fa-wallet text-lg"></i><span class="label">Credits</span>
   </div>
 </nav>
 
 <div id="toast"></div>
 
 <!-- SCREEN: WELCOME -->
-<div id="screen-welcome" class="screen active bg-surface">
-  <div class="absolute -top-24 -right-24 w-64 h-64 bg-primary/10 rounded-full blur-[80px]"></div>
-  <div class="absolute -bottom-24 -left-24 w-64 h-64 bg-secondary/5 rounded-full blur-[80px]"></div>
-  <div class="flex-1 flex flex-col items-center justify-between px-8 py-6 z-10 overflow-y-auto" style="max-height:580px;">
-    <div class="w-full flex flex-col items-center text-center mt-4">
-      <div class="mb-6">
-        <div class="w-20 h-20 bg-surface-container rounded-3xl flex items-center justify-center logo-glow border border-primary/20">
-          <span class="material-symbols-outlined text-[48px] text-primary">smart_toy</span>
+<div id="screen-welcome" class="screen active">
+  <div class="absolute -top-24 -right-24 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px]"></div>
+  <div class="flex-1 flex flex-col items-center justify-between px-7 py-6 z-10 overflow-y-auto">
+    <div class="w-full flex flex-col items-center text-center mt-3">
+      <div class="mb-5">
+        <div class="w-20 h-20 bg-panel rounded-3xl flex items-center justify-center logo-glow border border-edge shadow-md">
+          <i class="fa-solid fa-robot text-4xl text-primary"></i>
         </div>
       </div>
-      <h1 class="text-3xl font-extrabold tracking-tight mb-2">Meet SubBot</h1>
-      <p class="text-on-surface-variant text-sm px-4 leading-relaxed">Your AI/SaaS subscription manager. Powered by your Telegram bot.</p>
+      <h1 class="text-2xl font-extrabold tracking-tight mb-1 text-main">SubBot Extension</h1>
+      <p class="text-muted text-xs px-2 leading-relaxed">Your AI/SaaS subscription manager. Powered by your Telegram bot.</p>
     </div>
-    <div class="w-full grid grid-cols-1 gap-3 my-4">
-      <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-primary">travel_explore</span></div>
-        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-primary block">Auto-detect</span><span class="text-[11px] text-on-surface-variant">Bot scans Gmail for billing emails</span></div>
+    <div class="w-full grid grid-cols-1 gap-2.5 my-3">
+      <div class="glass p-2.5 rounded-2xl flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-envelope text-base text-primary"></i></div>
+        <div class="text-left"><span class="text-[11px] font-bold uppercase tracking-widest text-primary block">Auto-detect</span><span class="text-[10px] text-muted">Bot scans Gmail for receipts</span></div>
       </div>
-      <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-secondary/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-secondary">analytics</span></div>
-        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-secondary block">Audit spend</span><span class="text-[11px] text-on-surface-variant">Find overlaps and forgotten subs</span></div>
+      <div class="glass p-2.5 rounded-2xl flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-sky-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-chart-pie text-base text-sky-500"></i></div>
+        <div class="text-left"><span class="text-[11px] font-bold uppercase tracking-widest text-sky-500 block">Audit spend</span><span class="text-[10px] text-muted">Find overlaps &amp; forgotten subs</span></div>
       </div>
-      <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-tertiary/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-tertiary">notification_important</span></div>
-        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-tertiary block">Renewal alerts</span><span class="text-[11px] text-on-surface-variant">Never pay for forgotten trials</span></div>
+      <div class="glass p-2.5 rounded-2xl flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bell text-base text-emerald-500"></i></div>
+        <div class="text-left"><span class="text-[11px] font-bold uppercase tracking-widest text-emerald-500 block">Renewal alerts</span><span class="text-[10px] text-muted">Telegram DM before trials renew</span></div>
       </div>
-      <div class="glass p-3 rounded-2xl border border-outline-variant/10 flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-amber-400">bolt</span></div>
-        <div class="text-left"><span class="text-xs font-semibold uppercase tracking-widest text-amber-400 block">Pay-per-run</span><span class="text-[11px] text-on-surface-variant">Send $1 cUSD · bot runs for you</span></div>
+      <div class="glass p-2.5 rounded-2xl flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bolt text-base text-amber-500"></i></div>
+        <div class="text-left"><span class="text-[11px] font-bold uppercase tracking-widest text-amber-500 block">DeFi yield</span><span class="text-[10px] text-muted">Deposit cUSD · yield runs bot</span></div>
       </div>
     </div>
     <div class="w-full">
-      <button data-action="nav" data-target="setup" class="signature-glow w-full py-4 rounded-2xl flex items-center justify-center gap-2 text-slate-900 font-bold tracking-wide active:scale-95 transition-transform">
-        Get Started <span class="material-symbols-outlined">arrow_forward</span>
+      <button data-action="nav" data-target="setup" class="signature-glow w-full py-3.5 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm tracking-wide active:scale-95 transition-transform">
+        Connect Telegram Bot <i class="fa-solid fa-arrow-right text-sm"></i>
       </button>
-      <p class="text-[10px] text-center mt-3 text-on-surface-variant uppercase tracking-[0.2em] opacity-50">No keys. No custody. Just data.</p>
     </div>
   </div>
 </div>
 
-<!-- SCREEN: SETUP (pair with Telegram bot) -->
-<div id="screen-setup" class="screen bg-surface">
-  <div class="flex-1 flex flex-col px-8 py-8 space-y-6 overflow-y-auto" style="max-height:580px;">
+<!-- SCREEN: SETUP -->
+<div id="screen-setup" class="screen">
+  <div class="flex-1 flex flex-col px-7 py-6 space-y-5 overflow-y-auto">
     <div class="text-center">
-      <div class="w-16 h-16 bg-surface-container rounded-2xl flex items-center justify-center logo-glow border border-primary/20 mx-auto mb-4">
-        <span class="material-symbols-outlined text-[36px] text-primary">send</span>
+      <div class="w-16 h-16 bg-panel rounded-2xl flex items-center justify-center logo-glow border border-edge mx-auto mb-3 shadow-sm">
+        <i class="fa-brands fa-telegram text-3xl text-primary"></i>
       </div>
-      <h1 class="text-2xl font-bold">Connect Your Bot</h1>
-      <p class="text-on-surface-variant text-sm mt-2 leading-relaxed">The extension shows data from your Telegram bot. Connect once and it syncs automatically.</p>
+      <h1 class="text-xl font-bold text-main">Pair Your Extension</h1>
+      <p class="text-muted text-xs mt-1.5 leading-relaxed">Enter your Telegram User ID to sync subscriptions tracked by your bot.</p>
     </div>
 
-    <!-- Web3Auth Login Option -->
-    <div class="glass rounded-2xl p-4 border border-cyan-500/20 space-y-3">
-      <div class="flex items-center gap-2 mb-1">
-        <span class="text-[10px] font-bold uppercase tracking-widest text-cyan-400">✦ Web3Auth</span>
-        <span class="text-[10px] text-on-surface-variant bg-surface-container px-2 py-0.5 rounded-full">Recommended</span>
-      </div>
-      <p class="text-[11px] text-on-surface-variant leading-snug">Sign in with Google, Twitter, Discord, or email. No seed phrases needed.</p>
-      <button id="w3a-login-btn" data-action="web3authLogin" class="w-full py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-cyan-600 text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        <span class="material-symbols-outlined text-sm">lock_open</span>Login with Web3Auth
-      </button>
-      <!-- Shows after login -->
-      <div id="w3a-status" class="hidden items-center gap-3 p-3 bg-surface-container rounded-xl border border-outline-variant/10">
-        <div id="w3a-avatar" class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-sm flex-shrink-0">?</div>
-        <div class="flex-1 min-w-0">
-          <p id="w3a-name" class="text-xs font-semibold truncate">—</p>
-          <p id="w3a-email" class="text-[10px] text-on-surface-variant truncate">—</p>
-        </div>
-        <button data-action="web3authLogout" class="text-error/60 hover:text-error text-[10px]">Sign out</button>
-      </div>
-      <button id="w3a-dashboard-btn" data-action="web3authDashboard" class="hidden w-full py-3 rounded-xl signature-glow text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        Open Dashboard <span class="material-symbols-outlined">arrow_forward</span>
-      </button>
-    </div>
-
-    <!-- Divider -->
-    <div class="flex items-center gap-3 text-on-surface-variant text-[11px]">
-      <div class="flex-1 h-px bg-outline-variant/20"></div>
-      <span>or pair with Telegram</span>
-      <div class="flex-1 h-px bg-outline-variant/20"></div>
-    </div>
-
-    <div class="glass rounded-2xl p-5 border border-outline-variant/10 space-y-4">
+    <div class="glass rounded-2xl p-4 space-y-4 text-left">
       <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-primary text-xs font-bold">1</span></div>
-        <div>
-          <p class="text-sm font-semibold">Open your Telegram bot</p>
-          <button data-action="openBot" class="mt-1.5 text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
-            <span class="material-symbols-outlined text-sm">open_in_new</span>@SubmanagerAgentBot
+        <div class="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-primary">1</div>
+        <div class="flex-1">
+          <p class="text-xs font-semibold text-main">Open Telegram Bot</p>
+          <p class="text-[11px] text-muted leading-snug mt-0.5">Start @SubmanagerAgentBot and type <code class="font-mono text-primary bg-panel px-1 py-0.5 rounded border border-edge">/id</code></p>
+          <button data-action="openBot" class="mt-2 text-xs text-primary font-bold flex items-center gap-1 hover:underline">
+            <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> @SubmanagerAgentBot
           </button>
         </div>
       </div>
       <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-primary text-xs font-bold">2</span></div>
-        <div>
-          <p class="text-sm font-semibold">Send <code class="bg-surface-container px-1.5 py-0.5 rounded font-mono text-primary">/myid</code> to the bot</p>
-          <p class="text-[11px] text-on-surface-variant mt-0.5">It will reply with your numeric Telegram ID.</p>
-        </div>
-      </div>
-      <div class="flex items-start gap-3">
-        <div class="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5"><span class="text-primary text-xs font-bold">3</span></div>
+        <div class="w-6 h-6 rounded-full bg-cyan-500/20 flex items-center justify-center flex-shrink-0 mt-0.5 text-xs font-bold text-primary">2</div>
         <div class="flex-1">
-          <p class="text-sm font-semibold mb-2">Paste your ID here</p>
-          <input id="setup-tg-id" type="text" inputmode="numeric" placeholder="e.g. 6710506545" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl py-3 px-4 text-sm font-mono focus:outline-none focus:border-primary/50"/>
+          <p class="text-xs font-semibold mb-1 text-main">Paste Your ID</p>
+          <input id="setup-tg-id" type="text" placeholder="e.g. 123456789" class="w-full bg-field border border-edge rounded-xl py-2 px-3 text-xs font-mono text-main focus:outline-none focus:border-primary transition-colors"/>
         </div>
       </div>
     </div>
 
-    <button id="setup-btn" data-action="setupPair" class="signature-glow w-full py-4 rounded-2xl text-slate-900 font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
-      Load My Data <span class="material-symbols-outlined">arrow_forward</span>
+    <button id="setup-btn" data-action="setupPair" class="signature-glow w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-transform">
+      Pair &amp; Open Dashboard <i class="fa-solid fa-arrow-right text-sm"></i>
     </button>
-    <p class="text-center text-[11px] text-on-surface-variant">Haven't scanned yet? Connect the bot and say <span class="font-mono text-primary">"scan my Gmail"</span></p>
+    <button data-action="nav" data-target="dashboard" class="w-full py-2 text-xs text-muted hover:text-main transition-colors font-medium">
+      Skip for now (offline mode)
+    </button>
   </div>
 </div>
 
 <!-- SCREEN: DASHBOARD -->
-<div id="screen-dashboard" class="screen bg-surface">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
+<div id="screen-dashboard" class="screen">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
     <section class="flex flex-col items-center py-2">
-      <div class="relative w-[140px] h-[140px] flex items-center justify-center">
+      <div class="relative w-[130px] h-[130px] flex items-center justify-center">
         <svg class="w-full h-full transform -rotate-90">
-          <circle class="text-surface-variant" cx="70" cy="70" fill="transparent" r="60" stroke="currentColor" stroke-width="8"></circle>
-          <circle id="budget-ring" class="text-primary transition-all duration-700" cx="70" cy="70" fill="transparent" r="60" stroke="currentColor" stroke-dasharray="376.99" stroke-dashoffset="376.99" stroke-linecap="round" stroke-width="8"></circle>
+          <circle class="text-edge" cx="65" cy="65" fill="transparent" r="56" stroke="currentColor" stroke-width="8"></circle>
+          <circle id="budget-ring" class="text-primary transition-all duration-700" cx="65" cy="65" fill="transparent" r="56" stroke="currentColor" stroke-dasharray="351.86" stroke-dashoffset="351.86" stroke-linecap="round" stroke-width="8"></circle>
         </svg>
         <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span id="dash-spend" class="text-2xl font-bold font-mono">$0</span>
-          <span id="dash-budget" class="text-xs text-on-surface-variant">/ $100</span>
+          <span id="dash-spend" class="text-xl font-bold font-mono text-main">$0</span>
+          <span id="dash-budget" class="text-[10px] text-muted font-medium">/ $100</span>
         </div>
       </div>
-      <p class="text-sm font-medium mt-3">Monthly Spend · <span id="dash-pct" class="text-primary">0%</span> of budget</p>
+      <p class="text-xs font-semibold mt-2 text-main">Monthly Spend · <span id="dash-pct" class="text-primary font-bold">0%</span> of budget</p>
     </section>
-    <div class="grid grid-cols-3 gap-3">
-      <div class="bg-surface-container p-3 rounded-xl flex flex-col items-center text-center"><span id="stat-count" class="text-lg font-bold font-mono">0</span><span class="text-[10px] uppercase tracking-wider text-on-surface-variant">subs</span></div>
-      <div class="bg-surface-container p-3 rounded-xl flex flex-col items-center text-center"><span id="stat-annual" class="text-lg font-bold font-mono text-secondary">$0</span><span class="text-[10px] uppercase tracking-wider text-on-surface-variant">annual</span></div>
-      <div class="bg-surface-container p-3 rounded-xl flex flex-col items-center text-center"><span id="stat-renewals" class="text-lg font-bold font-mono text-tertiary">0</span><span class="text-[10px] uppercase tracking-wider text-on-surface-variant">renewals</span></div>
+    <div class="grid grid-cols-3 gap-2.5">
+      <div class="bg-panel p-2.5 rounded-xl border border-edge flex flex-col items-center text-center"><span id="stat-count" class="text-base font-bold font-mono text-main">0</span><span class="text-[9px] font-bold uppercase tracking-wider text-muted mt-0.5">subs</span></div>
+      <div class="bg-panel p-2.5 rounded-xl border border-edge flex flex-col items-center text-center"><span id="stat-annual" class="text-base font-bold font-mono text-sky-500">$0</span><span class="text-[9px] font-bold uppercase tracking-wider text-muted mt-0.5">annual</span></div>
+      <div class="bg-panel p-2.5 rounded-xl border border-edge flex flex-col items-center text-center"><span id="stat-renewals" class="text-base font-bold font-mono text-emerald-500">0</span><span class="text-[9px] font-bold uppercase tracking-wider text-muted mt-0.5">renewals</span></div>
     </div>
-    <div id="credits-strip" class="flex items-center justify-between px-3 py-2 bg-surface-container rounded-xl border border-outline-variant/10">
-      <div class="flex items-center gap-2"><span class="material-symbols-outlined text-amber-400 text-lg">payments</span><span class="text-xs text-on-surface-variant">Credits</span></div>
-      <span id="strip-balance" class="text-sm font-mono font-bold">— cUSD</span>
-      <button data-action="nav" data-target="credits" class="text-xs font-semibold bg-amber-500 text-slate-900 px-3 py-1 rounded-lg active:scale-95">Top Up</button>
+    <div id="credits-strip" class="flex items-center justify-between px-3 py-2 bg-panel rounded-xl border border-edge">
+      <div class="flex items-center gap-1.5"><i class="fa-solid fa-wallet text-amber-500 text-base"></i><span class="text-xs font-bold text-muted uppercase tracking-wider">Vault Credits</span></div>
+      <span id="strip-balance" class="text-xs font-mono font-bold text-main">— cUSD</span>
+      <button data-action="nav" data-target="credits" class="text-[10px] font-bold bg-amber-500 hover:bg-amber-600 text-white px-2.5 py-1 rounded-lg active:scale-95 transition-colors">Top Up</button>
     </div>
-    <div class="grid grid-cols-2 gap-3">
-      <button data-action="openBot" class="bg-gradient-to-br from-cyan-400 to-cyan-600 text-slate-900 font-semibold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        <span class="material-symbols-outlined text-sm">send</span><span class="text-xs">Open Bot</span>
+    <div class="grid grid-cols-2 gap-2.5">
+      <button data-action="openBot" class="signature-glow font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
+        <i class="fa-brands fa-telegram text-base"></i><span class="text-xs">Open Bot</span>
       </button>
-      <button data-action="nav" data-target="audit" class="border border-outline-variant/30 text-primary font-semibold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform">
-        <span class="material-symbols-outlined text-sm">analytics</span><span class="text-xs">View Audit</span>
+      <button data-action="nav" data-target="audit" class="border border-edge hover:bg-panel text-main font-bold py-2.5 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
+        <i class="fa-solid fa-chart-pie text-base text-primary"></i><span class="text-xs">View Audit</span>
       </button>
     </div>
     <section class="space-y-2 pb-2">
-      <h3 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant px-1">Renewing Soon</h3>
-      <div id="renewals-list"><div class="text-xs text-on-surface-variant text-center py-3">No subscriptions yet — tap <strong class="text-primary">+</strong> to add yours.</div></div>
+      <h3 class="text-[10px] font-bold uppercase tracking-widest text-muted px-1">Renewing Soon</h3>
+      <div id="renewals-list"><div class="text-xs text-muted text-center py-3 bg-panel rounded-xl border border-edge">No subscriptions tracked. Pair bot to sync.</div></div>
     </section>
   </div>
 </div>
 
 <!-- SCREEN: SUBSCRIPTIONS -->
-<div id="screen-subscriptions" class="screen bg-surface">
+<div id="screen-subscriptions" class="screen">
   <div class="screen-scroll pt-[52px] pb-[56px]">
-    <div class="px-4 pt-4 pb-3 space-y-3">
+    <div class="px-4 pt-3 pb-2 space-y-2.5">
       <div class="relative">
-        <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">search</span>
-        <input id="sub-search" type="text" placeholder="Search subscriptions…" class="w-full bg-surface-container-lowest border border-outline-variant/15 rounded-xl py-3 pl-10 pr-4 text-sm focus:outline-none placeholder:text-on-surface-variant/50"/>
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-muted text-sm"></i>
+        <input id="sub-search" type="text" placeholder="Search subscriptions…" class="w-full bg-field border border-edge rounded-xl py-2.5 pl-9 pr-3 text-xs text-main focus:outline-none focus:border-primary transition-colors"/>
       </div>
-      <div id="filter-chips" class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;">
-        <button data-action="filter" data-filter="all" class="filter-chip px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-primary text-on-primary">All</button>
-        <button data-action="filter" data-filter="ai" class="filter-chip px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-surface-container text-on-surface-variant border border-outline-variant/10">AI Tools</button>
-        <button data-action="filter" data-filter="saas" class="filter-chip px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-surface-container text-on-surface-variant border border-outline-variant/10">SaaS</button>
-        <button data-action="filter" data-filter="entertainment" class="filter-chip px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap bg-surface-container text-on-surface-variant border border-outline-variant/10">Entertainment</button>
+      <div id="filter-chips" class="flex gap-1.5 overflow-x-auto pb-1" style="scrollbar-width:none;">
+        <button data-action="filter" data-filter="all" class="filter-chip px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap bg-primary text-white">All</button>
+        <button data-action="filter" data-filter="ai" class="filter-chip px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap bg-panel text-muted border border-edge">AI Tools</button>
+        <button data-action="filter" data-filter="saas" class="filter-chip px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap bg-panel text-muted border border-edge">SaaS</button>
+        <button data-action="filter" data-filter="entertainment" class="filter-chip px-3 py-1 rounded-full text-[11px] font-bold whitespace-nowrap bg-panel text-muted border border-edge">Entertainment</button>
       </div>
     </div>
-    <div id="subs-list" class="px-4 space-y-2 pb-4"><div class="text-xs text-on-surface-variant text-center py-6">No subscriptions yet — tap <strong class="text-primary">+</strong> below to add yours.</div></div>
+    <div id="subs-list" class="px-4 space-y-2 pb-4"><div class="text-xs text-muted text-center py-6">No subscriptions found.</div></div>
   </div>
-  <button data-action="addSub" class="fixed bottom-16 right-4 w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 to-cyan-600 text-slate-900 shadow-[0_0_20px_rgba(34,211,238,0.4)] flex items-center justify-center active:scale-90 z-40"><span class="material-symbols-outlined text-3xl">add</span></button>
+  <button data-action="addSub" class="absolute bottom-16 right-4 w-12 h-12 rounded-2xl signature-glow shadow-xl flex items-center justify-center active:scale-90 transition-all z-40"><i class="fa-solid fa-plus text-xl"></i></button>
 </div>
 
 <!-- SCREEN: AUDIT -->
-<div id="screen-audit" class="screen bg-surface">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
-    <div class="grid grid-cols-2 gap-3">
-      <div class="bg-surface-container p-3 rounded-xl border border-outline-variant/15"><p class="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Monthly Spend</p><p id="audit-monthly" class="font-mono text-xl font-bold text-primary mt-1">$0</p></div>
-      <div class="bg-surface-container p-3 rounded-xl border border-outline-variant/15"><p class="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Annual</p><p id="audit-annual" class="font-mono text-xl font-bold text-secondary mt-1">$0</p></div>
-      <div class="bg-surface-container p-3 rounded-xl border border-outline-variant/15"><p class="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Overlaps</p><p id="audit-overlaps" class="font-mono text-xl font-bold text-error mt-1">0</p></div>
-      <div class="bg-surface-container p-3 rounded-xl border border-outline-variant/15"><p class="text-[10px] text-on-surface-variant uppercase tracking-wider font-semibold">Health Score</p><p id="audit-health" class="font-mono text-xl font-bold text-primary mt-1">—</p></div>
+<div id="screen-audit" class="screen">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-3.5">
+    <div class="grid grid-cols-2 gap-2.5 mt-3">
+      <div class="bg-panel p-2.5 rounded-xl border border-edge"><p class="text-[9px] text-muted uppercase tracking-wider font-bold">Monthly Spend</p><p id="audit-monthly" class="font-mono text-lg font-bold text-primary mt-0.5">$0</p></div>
+      <div class="bg-panel p-2.5 rounded-xl border border-edge"><p class="text-[9px] text-muted uppercase tracking-wider font-bold">Annual Spend</p><p id="audit-annual" class="font-mono text-lg font-bold text-sky-500 mt-0.5">$0</p></div>
+      <div class="bg-panel p-2.5 rounded-xl border border-edge"><p class="text-[9px] text-muted uppercase tracking-wider font-bold">Overlaps</p><p id="audit-overlaps" class="font-mono text-lg font-bold text-error mt-0.5">0</p></div>
+      <div class="bg-panel p-2.5 rounded-xl border border-edge"><p class="text-[9px] text-muted uppercase tracking-wider font-bold">Portfolio Score</p><p id="audit-health" class="font-mono text-lg font-bold text-emerald-500 mt-0.5">—</p></div>
     </div>
-    <section><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-1.5"><span class="w-1 h-3 bg-error rounded-full"></span>Overlaps Detected</h2><div id="overlaps-list" class="text-xs text-on-surface-variant text-center py-3">No data yet.</div></section>
+    <section><h2 class="text-[10px] font-bold uppercase tracking-widest text-muted mb-2 flex items-center gap-2"><span class="w-1 h-2.5 bg-error rounded-full"></span>Overlaps Detected</h2><div id="overlaps-list" class="text-xs text-muted text-center py-2 bg-panel rounded-xl border border-edge">No data yet.</div></section>
     <section>
-      <h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-1.5"><span class="w-1 h-3 bg-primary rounded-full"></span>Health Table</h2>
-      <div class="bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/5">
-        <div class="flex justify-between px-3 py-2 border-b border-outline-variant/10"><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">Service</span><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">$/mo · Health</span></div>
-        <div id="health-rows" class="divide-y divide-outline-variant/5"><p class="text-xs text-on-surface-variant text-center py-4">No data yet.</p></div>
+      <h2 class="text-[10px] font-bold uppercase tracking-widest text-muted mb-2 flex items-center gap-2"><span class="w-1 h-2.5 bg-primary rounded-full"></span>Service Health Table</h2>
+      <div class="bg-panel rounded-xl overflow-hidden border border-edge">
+        <div class="flex justify-between px-3 py-2 border-b border-edge font-bold text-[9px] uppercase text-muted tracking-wider"><span class="text-muted">Service Name</span><span class="text-muted">$/mo · Score</span></div>
+        <div id="health-rows" class="divide-y divide-edge"><p class="text-xs text-muted text-center py-3">No data yet.</p></div>
       </div>
     </section>
-    <section><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-3 flex items-center gap-1.5"><span class="w-1 h-3 bg-secondary rounded-full"></span>Quick Wins 💡</h2><div id="quick-wins"><p class="text-xs text-on-surface-variant text-center py-3">No data yet.</p></div></section>
-    <div class="bg-surface-container-low rounded-xl p-4 flex items-center gap-3 border border-outline-variant/10">
-      <span class="material-symbols-outlined text-primary text-sm">info</span>
-      <p class="text-[11px] text-on-surface-variant leading-snug">For a deeper AI audit, ask your Telegram bot: <span class="font-mono text-primary">"audit my subscriptions"</span></p>
-    </div>
+    <section><h2 class="text-[10px] font-bold uppercase tracking-widest text-muted mb-2 flex items-center gap-2"><span class="w-1 h-2.5 bg-amber-500 rounded-full"></span>Quick Wins 💡</h2><div id="quick-wins"><p class="text-xs text-muted text-center py-2 bg-panel rounded-xl border border-edge">No data yet.</p></div></section>
   </div>
 </div>
 
 <!-- SCREEN: ALERTS -->
-<div id="screen-alerts" class="screen bg-surface">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <section>
-      <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-4 flex items-center gap-2"><span class="w-1 h-1 bg-primary rounded-full"></span>Upcoming Renewals</h2>
-      <div id="alerts-timeline" class="relative pl-2 space-y-4"><p class="text-xs text-on-surface-variant text-center py-3">No upcoming renewals.</p></div>
+<div id="screen-alerts" class="screen">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
+    <section class="mt-3">
+      <h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-muted mb-2.5 flex items-center gap-2"><span class="w-1 h-2.5 bg-primary rounded-full"></span>Upcoming Renewals</h2>
+      <div id="alerts-timeline" class="space-y-3"><p class="text-xs text-muted text-center py-3 bg-panel rounded-xl border border-edge">No upcoming renewals.</p></div>
     </section>
     <section>
-      <div class="bg-surface-container-highest/40 rounded-2xl p-4 border border-outline-variant/20">
-        <h2 class="text-xs font-bold text-on-surface mb-4">Notification Preferences</h2>
-        <div class="space-y-4">
-          <div class="flex items-center justify-between"><span class="text-xs text-on-surface-variant">Notify 3 days before</span><button data-action="togglePref" class="pref-toggle w-11 h-6 bg-primary/20 rounded-full relative p-0.5 flex items-center" data-on="true"><div class="w-5 h-5 bg-primary rounded-full shadow-sm ml-auto"></div></button></div>
-          <div class="flex items-center justify-between"><span class="text-xs text-on-surface-variant">Notify 1 day before</span><button data-action="togglePref" class="pref-toggle w-11 h-6 bg-surface-container-highest rounded-full relative p-0.5 flex items-center" data-on="false"><div class="w-5 h-5 bg-outline rounded-full shadow-sm"></div></button></div>
-          <div class="flex items-center justify-between"><span class="text-xs text-on-surface-variant">Notify when over budget</span><button data-action="togglePref" class="pref-toggle w-11 h-6 bg-primary/20 rounded-full relative p-0.5 flex items-center" data-on="true"><div class="w-5 h-5 bg-primary rounded-full shadow-sm ml-auto"></div></button></div>
+      <div class="bg-panel rounded-2xl p-4 border border-edge">
+        <h2 class="text-xs font-bold text-main mb-3">Telegram Preferences</h2>
+        <div class="space-y-3">
+          <div class="flex items-center justify-between"><span class="text-xs font-medium text-main">Warn 3 days before charge</span><button data-action="togglePref" class="pref-toggle w-10 h-5 bg-primary/20 rounded-full relative p-0.5 flex items-center" data-on="true"><div class="w-4 h-4 bg-primary rounded-full shadow-md ml-auto"></div></button></div>
+          <div class="flex items-center justify-between"><span class="text-xs font-medium text-main">Warn 1 day before charge</span><button data-action="togglePref" class="pref-toggle w-10 h-5 bg-field rounded-full relative p-0.5 flex items-center border border-edge" data-on="false"><div class="w-4 h-4 bg-muted rounded-full shadow-sm"></div></button></div>
+          <div class="flex items-center justify-between"><span class="text-xs font-medium text-main">Alert on budget exceeded</span><button data-action="togglePref" class="pref-toggle w-10 h-5 bg-primary/20 rounded-full relative p-0.5 flex items-center" data-on="true"><div class="w-4 h-4 bg-primary rounded-full shadow-md ml-auto"></div></button></div>
         </div>
       </div>
     </section>
-    <section><h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-on-surface-variant mb-3 flex items-center gap-2"><span class="w-1 h-1 bg-secondary rounded-full"></span>Negotiation Center</h2><div id="negotiate-list"><p class="text-xs text-on-surface-variant text-center py-3">No subscriptions eligible yet.</p></div></section>
+    <section><h2 class="text-[10px] font-bold uppercase tracking-[0.2em] text-muted mb-2 flex items-center gap-2"><span class="w-1 h-2.5 bg-sky-500 rounded-full"></span>Negotiation Center</h2><div id="negotiate-list"><p class="text-xs text-muted text-center py-3 bg-panel rounded-xl border border-edge">No eligible subscriptions.</p></div></section>
   </div>
 </div>
 
 <!-- SCREEN: CREDITS -->
-<div id="screen-credits" class="screen bg-surface">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <!-- Balance card -->
-    <div class="relative w-full rounded-xl overflow-hidden gold-border p-5 flex flex-col justify-between amber-glow bg-gradient-to-br from-surface-container-high to-surface-container-lowest mt-2" style="min-height:120px;">
-      <div class="flex justify-between items-start">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-amber-400/20 flex items-center justify-center"><span class="material-symbols-outlined text-amber-500 text-lg" style="font-variation-settings:'FILL' 1">token</span></div>
-          <span class="text-xs font-mono text-amber-500 uppercase tracking-widest">Celo Mainnet · cUSD</span>
+<div id="screen-credits" class="screen">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-3.5">
+    <div id="vault-card" class="relative w-full rounded-2xl overflow-hidden gold-border p-4 flex flex-col gap-2.5 amber-glow bg-gradient-to-br from-slate-900 to-slate-950 text-white mt-3 shadow-xl">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center gap-1.5">
+          <div class="w-7 h-7 rounded-full bg-amber-400/20 flex items-center justify-center">
+            <i class="fa-solid fa-vault text-amber-400 text-sm"></i>
+          </div>
+          <span class="text-[11px] font-mono text-amber-400 uppercase tracking-widest font-bold">SubBot Vault · cUSD</span>
         </div>
       </div>
-      <div class="mt-3">
-        <span class="text-[10px] text-on-surface-variant uppercase tracking-widest">Your Balance</span>
-        <div class="flex items-baseline gap-2"><h1 id="credits-balance" class="text-3xl font-bold font-mono leading-none">0.00</h1><span class="text-amber-500 font-mono font-medium">cUSD</span></div>
+      <div class="grid grid-cols-3 gap-1.5 mt-1">
+        <div class="bg-white/5 rounded-xl p-2.5 text-center border border-white/10">
+          <p class="text-[8px] text-slate-400 uppercase tracking-widest font-bold mb-1">Principal</p>
+          <p id="vault-principal" class="text-sm font-bold font-mono text-white leading-none">—</p>
+          <p class="text-[8px] text-amber-400 font-semibold mt-1">Locked cUSD</p>
+        </div>
+        <div class="bg-white/5 rounded-xl p-2.5 text-center border border-white/10">
+          <p class="text-[8px] text-slate-400 uppercase tracking-widest font-bold mb-1">Yield Earned</p>
+          <p id="vault-yield" class="text-sm font-bold font-mono text-emerald-400 leading-none">—</p>
+          <p class="text-[8px] text-slate-300 mt-1">10% APY</p>
+        </div>
+        <div class="bg-white/5 rounded-xl p-2.5 text-center border border-white/10">
+          <p class="text-[8px] text-slate-400 uppercase tracking-widest font-bold mb-1">Credits</p>
+          <p id="vault-credits" class="text-sm font-bold font-mono text-cyan-400 leading-none">—</p>
+          <p class="text-[8px] text-slate-300 mt-1">Spendable</p>
+        </div>
       </div>
-      <p class="text-[10px] text-on-surface-variant mt-2">Managed by your Telegram bot · syncs automatically</p>
+      <p id="vault-tagline" class="text-[9px] text-slate-300 text-center leading-snug font-medium">
+        Deposit cUSD — Aave interest covers all bot runs forever. Principal untouched.
+      </p>
     </div>
 
-    <!-- How to top up -->
     <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-amber-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">How to Top Up</h2></div>
-      <div class="glass border border-outline-variant/10 rounded-2xl p-5 flex flex-col items-center gap-4">
-        <div class="bg-white p-3 rounded-2xl shadow-lg"><canvas id="credits-qr" width="140" height="140"></canvas></div>
-        <div class="w-full space-y-2">
-          <p class="text-[11px] text-on-surface-variant text-center leading-snug">Send any amount of <span class="text-on-surface font-semibold">cUSD</span> from <span class="text-primary">MiniPay</span> or <span class="text-primary">Valora</span> to this address, then confirm with your bot.</p>
-          <div class="flex items-center gap-2 p-3 bg-surface-container-lowest border border-outline-variant/10 rounded-xl">
-            <code id="qr-addr" class="text-[10px] font-mono text-secondary flex-1 truncate">—</code>
-            <button data-action="copyProjectAddr" class="text-on-surface-variant hover:text-primary flex-shrink-0"><span class="material-symbols-outlined text-lg">content_copy</span></button>
-          </div>
-          <button data-action="openBot" class="w-full py-2.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
-            <span class="material-symbols-outlined text-sm">send</span>Open Bot to Confirm
-          </button>
-        </div>
+      <div class="flex items-center gap-2 mb-2"><span class="w-1 h-2.5 bg-amber-500 rounded-full"></span><h2 class="text-[10px] font-bold uppercase tracking-widest text-muted">Project Wallet QR</h2></div>
+      <div class="bg-panel border border-edge rounded-2xl p-4 flex flex-col items-center">
+        <canvas id="credits-qr" width="160" height="160" class="rounded-xl border border-edge mb-2.5"></canvas>
+        <code class="project-addr-short text-[10px] font-mono text-primary font-bold">Loading…</code>
+        <button data-action="copyProjectAddr" class="mt-2 text-[11px] text-primary font-bold hover:underline flex items-center gap-1"><i class="fa-regular fa-copy text-xs"></i> Copy Address</button>
       </div>
-    </section>
-
-    <!-- Cost per action -->
-    <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-primary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Cost Per Action</h2></div>
-      <div class="bg-surface-container-low rounded-xl overflow-hidden border border-outline-variant/5">
-        <div class="flex justify-between px-4 py-2.5 border-b border-outline-variant/5"><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">Action</span><span class="text-[10px] uppercase font-bold tracking-tighter text-on-surface-variant">cUSD</span></div>
-        <div class="divide-y divide-outline-variant/5">
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Gmail Scan</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">AI Audit</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Export CSV</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">Negotiation Email</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs">View Dashboard</span><span class="text-xs font-mono font-bold text-tertiary">Free</span></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Usage history -->
-    <section class="pb-4">
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-tertiary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-on-surface-variant">Usage History</h2></div>
-      <div id="tx-history"><p class="text-xs text-on-surface-variant text-center py-3">No transactions yet.</p></div>
-      <p class="text-[10px] text-on-surface-variant text-center mt-3">Running on Celo · Fees &lt; $0.001</p>
     </section>
   </div>
 </div>
 
 <!-- SCREEN: SETTINGS -->
-<div id="screen-settings" class="screen bg-surface">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <!-- Web3Auth Account Section -->
-    <section class="space-y-2">
-      <h3 class="text-on-surface-variant font-medium text-xs uppercase tracking-widest pl-1">Web3Auth Account</h3>
-      <div id="settings-w3a-logged-out" class="bg-surface-container rounded-xl p-4 space-y-3">
+<div id="screen-settings" class="screen">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
+    <section class="space-y-2 mt-3">
+      <h3 class="text-muted font-bold text-[10px] uppercase tracking-widest pl-1">Telegram Sync</h3>
+      <div class="bg-panel border border-edge rounded-xl p-4 space-y-3">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-cyan-500/10 flex items-center justify-center flex-shrink-0"><span class="text-cyan-400 text-lg">🔐</span></div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold">Not connected</p>
-            <p class="text-[10px] text-on-surface-variant">Sign in with Google, Twitter, Discord, or email</p>
-          </div>
+          <div class="w-9 h-9 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-brands fa-telegram text-primary text-base"></i></div>
+          <div class="flex-1 min-w-0"><p class="text-xs font-bold text-main">Pair Extension</p><p id="tg-pair-status" class="text-[10px] text-muted">Not paired</p></div>
         </div>
-        <button data-action="web3authLogin" class="w-full py-2.5 rounded-xl bg-cyan-500/10 text-cyan-400 text-xs font-semibold flex items-center justify-center gap-1.5 active:scale-95">
-          <span class="material-symbols-outlined text-sm">lock_open</span>Connect Web3Auth
-        </button>
-      </div>
-      <div id="settings-w3a-logged-in" class="hidden bg-surface-container rounded-xl p-4 space-y-3">
-        <div class="flex items-center gap-3">
-          <div id="settings-w3a-avatar" class="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center font-bold text-cyan-400 flex-shrink-0">?</div>
-          <div class="flex-1 min-w-0">
-            <p id="settings-w3a-name" class="text-sm font-semibold truncate">—</p>
-            <p id="settings-w3a-email" class="text-[10px] text-on-surface-variant truncate">—</p>
-            <p class="text-[10px] text-cyan-400 mt-0.5">✓ Web3Auth connected</p>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <div class="flex-1 bg-surface-container-low rounded-lg px-3 py-2">
-            <p class="text-[10px] text-on-surface-variant">User ID</p>
-            <p id="settings-w3a-userid" class="text-[10px] font-mono text-primary truncate">—</p>
-          </div>
-          <button data-action="web3authLogout" class="px-4 py-2 rounded-lg border border-error/30 text-error text-xs font-semibold active:scale-95">Sign out</button>
-        </div>
+        <input id="settings-tg-id" type="text" placeholder="Your Telegram User ID" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs font-mono text-main focus:outline-none focus:border-primary"/>
+        <button data-action="saveTgId" class="w-full py-2 rounded-lg bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-colors">Sync &amp; Save</button>
       </div>
     </section>
     <section class="space-y-2">
-      <h3 class="text-on-surface-variant font-medium text-xs uppercase tracking-widest pl-1">Telegram Bot</h3>
-      <div class="bg-surface-container rounded-xl p-4 space-y-3">
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center flex-shrink-0"><span class="material-symbols-outlined text-primary">send</span></div>
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-semibold">Telegram User ID</p>
-            <p class="text-[10px] text-on-surface-variant leading-snug">Send <span class="font-mono text-primary">/myid</span> to @SubmanagerAgentBot to get your ID.</p>
-          </div>
-        </div>
-        <div class="flex gap-2">
-          <input id="settings-tg-id" type="text" inputmode="numeric" placeholder="e.g. 6710506545" class="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs focus:outline-none font-mono"/>
-          <button data-action="saveTgId" class="px-4 py-2 rounded-lg bg-primary/10 text-primary text-xs font-semibold active:scale-95">Sync</button>
-        </div>
-        <p id="tg-pair-status" class="text-[10px] text-on-surface-variant"></p>
+      <h3 class="text-muted font-bold text-[10px] uppercase tracking-widest pl-1">Monthly Budget</h3>
+      <div class="bg-panel border border-edge rounded-xl p-4 text-center">
+        <div class="inline-flex items-baseline gap-1"><span class="text-primary text-xl font-bold">$</span><input id="budget-input" type="number" class="bg-transparent border-none p-0 focus:ring-0 text-3xl font-bold w-20 text-main font-mono text-center" value="100"/></div>
+        <p class="text-[9px] text-muted mt-1 uppercase tracking-wide font-semibold">Monthly limit</p>
+        <button data-action="saveBudget" class="mt-2.5 px-5 py-1.5 rounded-full bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold transition-colors">Save Budget</button>
       </div>
     </section>
     <section class="space-y-2">
-      <h3 class="text-on-surface-variant font-medium text-xs uppercase tracking-widest pl-1">Monthly Budget</h3>
-      <div class="bg-surface-container-low rounded-xl p-5 border border-outline-variant/10 text-center">
-        <div class="inline-flex items-baseline gap-1"><span class="text-primary text-2xl font-bold">$</span><input id="budget-input" type="number" class="bg-transparent border-none p-0 focus:ring-0 text-4xl font-bold w-24 text-on-surface tracking-tighter font-mono" value="100"/></div>
-        <p class="text-[10px] text-on-surface-variant mt-2 uppercase tracking-wide">Monthly limit — alerts when exceeded</p>
-        <button data-action="saveBudget" class="mt-3 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-semibold">Save</button>
-      </div>
+      <button data-action="exportAction" class="w-full py-2.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-primary text-xs font-bold flex items-center justify-center gap-2 transition-all shadow-sm"><i class="fa-solid fa-download text-xs"></i> Export Portfolio CSV</button>
     </section>
-    <section class="space-y-2">
-      <button data-action="exportAction" class="w-full py-3 rounded-xl border border-outline-variant/30 text-primary text-sm font-semibold flex items-center justify-center gap-2"><span class="material-symbols-outlined text-sm">download</span>Export CSV</button>
-    </section>
-    <section class="pt-2 text-center">
-      <button data-action="resetBot" class="text-error/60 text-xs font-medium flex items-center justify-center gap-1 mx-auto hover:text-error"><span class="material-symbols-outlined text-xs">restart_alt</span>Reset SubBot</button>
+    <section class="pt-1 pb-4 text-center">
+      <button data-action="resetBot" class="text-error text-xs font-bold flex items-center justify-center gap-1 mx-auto hover:opacity-80 transition-opacity"><i class="fa-solid fa-rotate-left text-xs"></i> Reset Extension Data</button>
     </section>
   </div>
 </div>
 
-<!-- MODAL: NEGOTIATE EMAIL -->
+<!-- MODALS -->
 <div id="modal-negotiate" class="modal-overlay" data-modal="modal-negotiate">
-  <div class="glass w-full max-w-[360px] rounded-2xl border border-outline-variant/20 shadow-2xl p-5" data-modal-content>
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="font-semibold">Negotiation Email</h2>
-      <button data-action="closeModal" data-modal="modal-negotiate"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
+  <div class="bg-app w-full rounded-2xl border border-edge shadow-2xl p-4" data-modal-content>
+    <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-xs text-main">Retention Draft</h2><button data-action="closeModal" data-modal="modal-negotiate"><i class="fa-solid fa-xmark text-muted text-base hover:text-main"></i></button></div>
+    <div class="space-y-2 mb-3">
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">To</label><input id="neg-to" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main font-mono"/></div>
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Subject</label><input id="neg-subject" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main"/></div>
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Message</label><textarea id="neg-body" rows="5" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main resize-none"></textarea></div>
     </div>
-    <div class="space-y-3 mb-4">
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">To</label><input id="neg-to" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Subject</label><input id="neg-subject" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Body</label><textarea id="neg-body" rows="6" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none resize-none"></textarea></div>
-    </div>
-    <button data-action="copyNeg" class="w-full py-3 rounded-xl signature-glow text-slate-900 font-bold text-sm active:scale-95">Copy Email</button>
+    <button data-action="copyNeg" class="w-full py-2.5 rounded-xl signature-glow font-bold text-xs shadow-md active:scale-95 transition-transform">Copy Email</button>
   </div>
 </div>
 
-<!-- MODAL: ADD SUBSCRIPTION -->
 <div id="modal-add-sub" class="modal-overlay items-center" data-modal="modal-add-sub">
-  <div class="glass w-full max-w-[360px] rounded-2xl border border-outline-variant/20 shadow-2xl p-5" data-modal-content>
-    <div class="flex justify-between items-center mb-4">
-      <h2 class="font-semibold">Add Subscription</h2>
-      <button data-action="closeModal" data-modal="modal-add-sub"><span class="material-symbols-outlined text-on-surface-variant">close</span></button>
-    </div>
-    <div class="space-y-3 mb-4">
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Name *</label><input id="add-sub-name" placeholder="e.g. Netflix" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Provider</label><input id="add-sub-provider" placeholder="e.g. Netflix Inc." class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
+  <div class="bg-app w-full rounded-2xl border border-edge shadow-2xl p-4" data-modal-content>
+    <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-xs text-main">Add Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-base hover:text-main"></i></button></div>
+    <div class="space-y-2 mb-3">
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Name *</label><input id="add-sub-name" placeholder="e.g. Netflix" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main"/></div>
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Provider</label><input id="add-sub-provider" placeholder="e.g. Netflix Inc." class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main"/></div>
       <div class="flex gap-2">
-        <div class="flex-1"><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Monthly Cost *</label><input id="add-sub-cost" type="number" min="0" step="0.01" placeholder="9.99" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
-        <div class="w-20"><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Currency</label><input id="add-sub-currency" placeholder="USD" maxlength="3" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
+        <div class="flex-1"><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Cost *</label><input id="add-sub-cost" type="number" min="0" step="0.01" placeholder="9.99" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main font-mono"/></div>
+        <div class="w-16"><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Currency</label><input id="add-sub-currency" placeholder="USD" maxlength="3" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main font-mono"/></div>
       </div>
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Next Renewal</label><input id="add-sub-renewal" type="date" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-on-surface-variant">Category</label>
-        <select id="add-sub-category" class="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg py-2 px-3 text-xs mt-1 focus:outline-none">
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Renewal</label><input id="add-sub-renewal" type="date" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main"/></div>
+      <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Category</label>
+        <select id="add-sub-category" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main">
           <option value="saas">SaaS</option>
           <option value="ai">AI</option>
           <option value="entertainment">Entertainment</option>
-          <option value="productivity">Productivity</option>
           <option value="other">Other</option>
         </select>
       </div>
     </div>
-    <button data-action="saveManualSub" class="w-full py-3 rounded-xl signature-glow text-slate-900 font-bold text-sm active:scale-95">Add Subscription</button>
+    <button data-action="saveManualSub" class="w-full py-2.5 rounded-xl signature-glow font-bold text-xs shadow-md active:scale-95 transition-transform">Save Subscription</button>
+  </div>
+</div>
+
+<div id="modal-qr" class="modal-overlay items-center" data-modal="modal-qr">
+  <div class="bg-app w-full rounded-2xl border border-edge shadow-2xl p-4 text-center" data-modal-content>
+    <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-xs text-main">Project Wallet QR</h2><button data-action="closeModal" data-modal="modal-qr"><i class="fa-solid fa-xmark text-muted text-base hover:text-main"></i></button></div>
+    <canvas id="qr-canvas" width="200" height="200" class="rounded-xl mx-auto border border-edge mb-2"></canvas>
+    <code id="qr-addr" class="text-[10px] font-mono text-primary font-bold block break-all mb-3">Loading…</code>
+    <button data-action="copyProjectAddr" class="w-full py-2 rounded-xl signature-glow font-bold text-xs shadow-md">Copy Address</button>
   </div>
 </div>
 
 <script src="popup.js"></script>
+</div><!-- #app -->
 </body>
 </html>
