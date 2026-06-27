@@ -50,8 +50,8 @@
   }
 
   html, body { margin:0; padding:0; height:100%; background: var(--bg-page); transition: background 0.3s; }
-  body { font-family:'Inter',sans-serif; color: var(--text-main); display:flex; align-items:center; justify-content:center; min-height:100vh; }
-  #app { position:relative; width:min(400px,100vw); height:100svh; max-height:min(100svh,720px); min-height:580px; overflow:hidden; background: var(--bg-app); border: 1px solid var(--border-color); transition: background 0.3s, border-color 0.3s; }
+  body { font-family:'Inter',sans-serif; color: var(--text-main); display:flex; align-items:flex-start; justify-content:center; min-height:100svh; }
+  #app { position:relative; width:100%; height:100svh; max-height:none; overflow:hidden; background: var(--bg-app); border:none; transition: background 0.3s, border-color 0.3s; }
   .screen { display:none; width:100%; height:100%; flex-direction:column; position:relative; background: var(--bg-app); }
   .screen.active { display:flex; }
   .screen-scroll { overflow-y:auto; flex:1; max-height:calc(100% - 52px - 56px); }
@@ -76,8 +76,9 @@
   .nav-tab.active-tab { color: var(--accent); background: var(--accent-glow); font-weight:600; }
   .nav-tab span.label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-top:3px; }
   
-  @media (min-width:420px) {
-    #app { border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); }
+  @media (min-width:480px) {
+    body { align-items:center; }
+    #app { width:400px; height:720px; max-height:calc(100vh - 40px); border:1px solid var(--border-color); border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); }
   }
 </style>
 </head>
