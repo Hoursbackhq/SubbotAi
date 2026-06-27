@@ -464,6 +464,9 @@ document.addEventListener('click', e => {
     case 'scanGmail':        runSettingsGmailScan(); break;
     case 'copyVaultAddr':    copyVaultAddr(); break;
     case 'togglePushNotifications': togglePushNotifications(); break;
+    case 'confirmScanSubs':  confirmScanSubs(); break;
+    case 'scanSelectAll':    document.querySelectorAll('#scan-results-list input[type="checkbox"]').forEach(cb => cb.checked = true); break;
+    case 'scanSelectNone':   document.querySelectorAll('#scan-results-list input[type="checkbox"]').forEach(cb => cb.checked = false); break;
   }
 });
 
@@ -1047,23 +1050,10 @@ async function runGmailScan() {
     if (!r.ok) throw new Error(data.error || 'Scan failed');
 
     const found = data.subscriptions || [];
-    if (found.length) {
-      // Merge with existing subs (avoid duplicates by name)
-      const existing = new Set(state.subscriptions.map(s => s.name.toLowerCase()));
-      let added = 0;
-      found.forEach(s => {
-        if (!existing.has(s.name.toLowerCase())) {
-          s.id = s.id || ('scan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
-          s.status = s.status || 'active';
-          s.source = 'gmail';
-          state.subscriptions.push(s);
-          added++;
-        }
-      });
-      saveState();
-      toast(`Found ${found.length} subs, ${added} new added!`);
-    } else {
+    if (!found.length) {
       toast('No subscriptions found in Gmail');
+      document.getElementById('modal-gmail-scan')?.classList.remove('active');
+      return;
     }
 
     // Save credentials for future scans
@@ -1071,9 +1061,9 @@ async function runGmailScan() {
     if (document.getElementById('settings-password')) document.getElementById('settings-password').value = password;
 
     document.getElementById('modal-gmail-scan')?.classList.remove('active');
-    renderSubs();
-    refreshDashboard();
-    scheduleRenewalNotifications();
+
+    // Show confirmation modal
+    showScanConfirmModal(found);
   } catch (err) {
     console.error('Gmail scan error:', err);
     toast('Scan failed — check email and app password');
@@ -1131,6 +1121,78 @@ async function installPWA() {
     document.getElementById('pwa-install-banner')?.classList.add('hidden');
   }
   deferredInstallPrompt = null;
+}
+
+// ── Scan Confirmation ────────────────────────────────────────────────────
+let pendingScanSubs = [];
+
+function showScanConfirmModal(found) {
+  const existing = new Set(state.subscriptions.map(s => s.name.toLowerCase()));
+  pendingScanSubs = found.map(s => {
+    s.id = s.id || ('scan-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6));
+    s.status = s.status || 'active';
+    s.source = 'gmail';
+    return s;
+  });
+
+  const list = document.getElementById('scan-results-list');
+  list.innerHTML = pendingScanSubs.map((s, i) => {
+    const alreadyExists = existing.has(s.name.toLowerCase());
+    const cur = cSym(s.currency);
+    const cost = s.monthly_cost ? `${cur}${s.monthly_cost.toLocaleString()}` : '—';
+    const statusBadge = s.status === 'cancelled'
+      ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-error/10 text-error font-bold">Cancelled</span>'
+      : '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold">Active</span>';
+    const dupBadge = alreadyExists
+      ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-bold">Already tracked</span>'
+      : '';
+
+    return `<label class="flex items-center gap-3 p-3 bg-panel rounded-xl border border-edge cursor-pointer hover:bg-panel-hover transition-colors">
+      <input type="checkbox" value="${i}" ${!alreadyExists && s.status !== 'cancelled' ? 'checked' : ''} class="w-4 h-4 rounded accent-primary flex-shrink-0"/>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-center gap-2">
+          ${faviconImg(s, 'w-6 h-6')}
+          <span class="text-xs font-bold text-main truncate">${s.name}</span>
+        </div>
+        <div class="flex items-center gap-1.5 mt-1">
+          ${statusBadge} ${dupBadge}
+          <span class="text-[10px] text-muted font-mono">${cost}/mo</span>
+        </div>
+      </div>
+    </label>`;
+  }).join('');
+
+  toast(`Found ${found.length} subscription${found.length === 1 ? '' : 's'}!`);
+  document.getElementById('modal-scan-confirm')?.classList.add('active');
+}
+
+function confirmScanSubs() {
+  const checked = document.querySelectorAll('#scan-results-list input[type="checkbox"]:checked');
+  const indices = new Set([...checked].map(cb => parseInt(cb.value)));
+  let added = 0;
+  const existing = new Set(state.subscriptions.map(s => s.name.toLowerCase()));
+
+  indices.forEach(i => {
+    const s = pendingScanSubs[i];
+    if (s && !existing.has(s.name.toLowerCase())) {
+      state.subscriptions.push(s);
+      existing.add(s.name.toLowerCase());
+      added++;
+    }
+  });
+
+  if (added) {
+    saveState();
+    renderSubs();
+    refreshDashboard();
+    scheduleRenewalNotifications();
+    toast(`${added} subscription${added === 1 ? '' : 's'} added!`);
+  } else {
+    toast('No new subscriptions added');
+  }
+
+  pendingScanSubs = [];
+  document.getElementById('modal-scan-confirm')?.classList.remove('active');
 }
 
 // ── Push Notifications ───────────────────────────────────────────────────

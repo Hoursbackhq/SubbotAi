@@ -480,6 +480,27 @@
   </div>
 </div>
 
+<!-- MODAL: SCAN RESULTS CONFIRMATION -->
+<div id="modal-scan-confirm" class="modal-overlay items-center" data-modal="modal-scan-confirm">
+  <div class="bg-app w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" data-modal-content>
+    <div class="flex justify-between items-center mb-3">
+      <h2 class="font-bold text-main text-sm">Subscriptions Found</h2>
+      <button data-action="closeModal" data-modal="modal-scan-confirm"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button>
+    </div>
+    <p class="text-[10px] text-muted mb-3">Select the subscriptions you want to track:</p>
+    <div class="flex gap-2 mb-3">
+      <button data-action="scanSelectAll" class="text-[10px] font-bold text-primary hover:underline">Select All</button>
+      <span class="text-muted text-[10px]">·</span>
+      <button data-action="scanSelectNone" class="text-[10px] font-bold text-muted hover:underline">Deselect All</button>
+    </div>
+    <div id="scan-results-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1" style="scrollbar-width:thin;"></div>
+    <div class="flex gap-2 mt-4">
+      <button data-action="closeModal" data-modal="modal-scan-confirm" class="flex-1 py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-muted text-sm font-bold transition-all">Cancel</button>
+      <button data-action="confirmScanSubs" class="flex-1 py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 transition-transform">Add Selected</button>
+    </div>
+  </div>
+</div>
+
 <script src="popup.js"></script>
 </div><!-- #app -->
 </body>
