@@ -17,6 +17,36 @@ const CELO_CHAIN = {
 const CURRENCY_SYMBOLS = { USD:'$', EUR:'€', GBP:'£', NGN:'₦', KES:'KSh', GHS:'GH₵', ZAR:'R', 'G$':'G$', cUSD:'cUSD' };
 function cSym(code) { return CURRENCY_SYMBOLS[code] || code || '$'; }
 
+// ── Exchange Rates (cached 24h) ──────────────────────────────────────────
+let _fxRates = null;
+async function getFxRates() {
+  if (_fxRates) return _fxRates;
+  const cached = localStorage.getItem('fx-rates');
+  if (cached) {
+    const { ts, rates } = JSON.parse(cached);
+    if (Date.now() - ts < 86400000) { _fxRates = rates; return rates; }
+  }
+  try {
+    const resp = await fetch('https://api.exchangerate.host/latest?base=USD');
+    const json = await resp.json();
+    if (json.rates) {
+      _fxRates = json.rates;
+      _fxRates.USD = 1;
+      localStorage.setItem('fx-rates', JSON.stringify({ ts: Date.now(), rates: _fxRates }));
+      return _fxRates;
+    }
+  } catch(e) { console.warn('FX fetch failed, using fallback rates'); }
+  // Fallback approximate rates if API fails
+  _fxRates = { USD:1, EUR:0.92, GBP:0.79, NGN:1550, KES:153, GHS:15.5, ZAR:18.2 };
+  return _fxRates;
+}
+function convertToTarget(amount, fromCur, toCur, rates) {
+  if (!fromCur || !toCur || fromCur === toCur) return amount;
+  const fromRate = rates[fromCur] || 1;
+  const toRate = rates[toCur] || 1;
+  return amount / fromRate * toRate;
+}
+
 const FAVICON_DOMAINS = {
   'claude':'anthropic.com','claude pro':'anthropic.com','anthropic':'anthropic.com',
   'chatgpt':'openai.com','chatgpt plus':'openai.com','openai':'openai.com',
@@ -845,18 +875,23 @@ async function refreshData() {
 // ── Onboarding ────────────────────────────────────────────────────────────
 
 // ── Dashboard ─────────────────────────────────────────────────────────────
-function refreshDashboard() {
+async function refreshDashboard() {
   const subs    = state.subscriptions.filter(s => s.status === 'active');
-  const monthly = subs.reduce((sum, s) => sum + (s.monthly_cost_usd || s.monthly_cost || 0), 0);
+  const budgetCur = state.budgetCurrency || 'USD';
+  const budgetSym = cSym(budgetCur);
   const budget  = state.budget || 100;
-  const pct     = Math.min(100, Math.round(monthly / budget * 100));
-  // Detect dominant currency
-  const currencies = subs.map(s => s.currency || 'USD');
-  const mainCur = currencies.sort((a,b) => currencies.filter(v=>v===b).length - currencies.filter(v=>v===a).length)[0] || 'USD';
-  const sym = cSym(mainCur);
+  const rates   = await getFxRates();
 
-  const budgetSym = cSym(state.budgetCurrency || 'USD');
-  document.getElementById('dash-spend').textContent  = sym + monthly.toFixed(0);
+  // Convert every sub's cost to budget currency, then sum
+  const monthly = subs.reduce((sum, s) => {
+    const cost = s.monthly_cost_usd || s.monthly_cost || 0;
+    const cur  = s.currency || 'USD';
+    return sum + convertToTarget(cost, cur, budgetCur, rates);
+  }, 0);
+
+  const pct = Math.min(100, Math.round(monthly / budget * 100));
+
+  document.getElementById('dash-spend').textContent  = budgetSym + monthly.toFixed(0);
   document.getElementById('dash-budget').textContent = '/ ' + budgetSym + budget;
   document.getElementById('dash-pct').textContent    = pct + '%';
   const ring = document.getElementById('budget-ring');
@@ -874,14 +909,14 @@ function refreshDashboard() {
         navigator.serviceWorker.controller.postMessage({
           type: 'budget-exceeded',
           title: 'SubBot · Budget Exceeded',
-          body: `Monthly spend (${sym}${monthly.toFixed(0)}) has passed your ${budgetSym}${budget} budget`,
+          body: `Monthly spend (${budgetSym}${monthly.toFixed(0)}) has passed your ${budgetSym}${budget} budget`,
         });
       }
     }
   }
 
   document.getElementById('stat-count').textContent    = subs.length;
-  document.getElementById('stat-annual').textContent   = sym + (monthly * 12).toFixed(0);
+  document.getElementById('stat-annual').textContent   = budgetSym + (monthly * 12).toFixed(0);
 
   const now  = new Date();
   const soon = subs.filter(s => s.next_renewal && (new Date(s.next_renewal) - now) / 86400000 <= 30).length;
