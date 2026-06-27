@@ -1379,17 +1379,34 @@ function togglePref(btn) {
 
 // ── Share ─────────────────────────────────────────────────────────────────
 async function shareApp() {
-  const shareData = {
-    title: 'SubBot — AI Subscription Manager',
-    text: 'Track, audit, and optimise your SaaS spend with SubBot. Free on Celo.',
-    url: 'https://subbotai.xyz',
-  };
+  const text = 'Check out SubBot — AI subscription manager on Celo: https://subbotai.xyz';
   if (navigator.share) {
-    try { await navigator.share(shareData); return; } catch (_) {}
+    try {
+      await navigator.share({
+        title: 'SubBot — AI Subscription Manager',
+        text: 'Track, audit, and optimise your SaaS spend with SubBot. Free on Celo.',
+        url: 'https://subbotai.xyz',
+      });
+      return;
+    } catch (e) {
+      // User cancelled share sheet — fall through to clipboard
+      if (e.name === 'AbortError') return;
+    }
   }
-  navigator.clipboard.writeText('Check out SubBot — AI subscription manager on Celo: https://subbotai.xyz')
-    .then(() => toast('Link copied!'))
-    .catch(() => toast('Copy failed'));
+  // Clipboard fallback — try modern API, then textarea fallback
+  try {
+    await navigator.clipboard.writeText(text);
+    toast('Link copied!');
+  } catch (_) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast('Link copied!');
+  }
 }
 
 // ── Gmail Scan ───────────────────────────────────────────────────────────
