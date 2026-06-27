@@ -5,8 +5,9 @@
 **Live now →**
 - Web: [subbotai.xyz](https://subbotai.xyz)
 - Telegram: [@SubmanagerAgentBot](https://t.me/SubmanagerAgentBot)
-- SubBotVault: [`0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62`](https://celoscan.io/address/0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62)
+- SubBotCredits: [`0x4CB0d47BA5F40A5ffDc9BfF6D7810D9a887853B1`](https://celoscan.io/address/0x4CB0d47BA5F40A5ffDc9BfF6D7810D9a887853B1)
 - SubBotLog: [`0x5bc06976e5b46fd624195EFdD0bFC45a73569003`](https://celoscan.io/address/0x5bc06976e5b46fd624195EFdD0bFC45a73569003)
+- SubBotVault (legacy): [`0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62`](https://celoscan.io/address/0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62)
 
 ---
 
@@ -160,17 +161,20 @@ Hermes Gateway  (Hermes-4-70B · Nous inference API)
 
 ## On-chain proof
 
-**SubBotVault** — [`0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62`](https://celoscan.io/address/0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62)
+**SubBotCredits** — [`0x4CB0d47BA5F40A5ffDc9BfF6D7810D9a887853B1`](https://celoscan.io/address/0x4CB0d47BA5F40A5ffDc9BfF6D7810D9a887853B1)
 
-The yield vault. cUSD deposits go into Aave v3 on Celo. G$ UBI deposits accrue as a spendable balance. The agent calls `spendCredits()` for every operation — if the balance is insufficient, the call reverts. No code path can touch principal.
+G$ credit system. Users deposit GoodDollar tokens, agent spends them for operations. No yield, no swaps — just deposit and spend. Users can withdraw unspent G$ at any time. `spendCredits()` reverts if balance is insufficient.
 
-- Aave v3 Pool (Celo) — [`0x3E59A31363E2ad014dcbc521c4a0d5757d9f3402`](https://celoscan.io/address/0x3E59A31363E2ad014dcbc521c4a0d5757d9f3402)
-- cUSD — [`0x765DE816845861e75A25fCA122bb6898B8B1282a`](https://celoscan.io/address/0x765DE816845861e75A25fCA122bb6898B8B1282a)
-- G$ (GoodDollar) — [`0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c14`](https://celoscan.io/address/0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c14)
+- G$ (GoodDollar) — [`0x62B8b11039fcfe5Ab0c56E502B1c372a3d2a9C14`](https://celoscan.io/address/0x62B8b11039fcfe5Ab0c56E502B1c372a3d2a9C14)
+- Agent wallet — [`0xfEFAC90c384f6c09004F485b9fa894D9dA910898`](https://celoscan.io/address/0xfEFAC90c384f6c09004F485b9fa894D9dA910898)
 
 **SubBotLog** — [`0x5bc06976e5b46fd624195EFdD0bFC45a73569003`](https://celoscan.io/address/0x5bc06976e5b46fd624195EFdD0bFC45a73569003)
 
 Immutable decision audit trail. Every LLM recommendation creates a transaction with a privacy-preserving user hash, action type, and estimated savings.
+
+**SubBotVault** (legacy) — [`0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62`](https://celoscan.io/address/0x48720eeDdCc1Cf3B2C613Dc093869a2332841e62)
+
+Previous yield-bearing vault (Aave v3 integration). Superseded by SubBotCredits for simpler G$ operations.
 
 ---
 
