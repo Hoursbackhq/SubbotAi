@@ -275,16 +275,28 @@ async function gdNextClaimTime() {
   return new Date((ref + DAY) * 1000);
 }
 
-// Top wallet with gas via GD faucet if needed
-async function gdTopGasIfNeeded(provider, address) {
-  const canTopResult = await ethCall(GD_FAUCET, SEL_CAN_TOP + padAddr(address));
-  if (!canTopResult || BigInt(canTopResult) === 0n) return;
+// Top wallet with gas via GoodDollar backend faucet (no gas needed to call)
+async function gdTopGasIfNeeded(address) {
   try {
-    await provider.request({
-      method: 'eth_sendTransaction',
-      params: [{ from: address, to: GD_FAUCET, data: SEL_TOP_WALLET + padAddr(address), gas: '0x15F90' }],
+    // Check if user has low CELO balance
+    const balResp = await fetch('https://forno.celo.org', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_getBalance', params: [address, 'latest'] }),
     });
-  } catch (_) {} // gas top is best-effort
+    const balJson = await balResp.json();
+    const celoBal = balJson.result ? Number(BigInt(balJson.result)) : 0;
+    // If user has more than 0.005 CELO, skip faucet
+    if (celoBal > 5e15) return;
+
+    // Call GoodDollar backend faucet — free, no gas required
+    await fetch('https://goodserver.gooddollar.org/verify/topWallet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chainId: 42220, account: address }),
+    });
+    // Wait a moment for the top-up tx to land
+    await new Promise(r => setTimeout(r, 3000));
+  } catch (_) {} // best-effort
 }
 
 async function checkGDStatus(address) {
@@ -400,13 +412,34 @@ async function claimGD() {
       return;
     }
 
+    // Verify entitlement before sending tx
+    const root = await gdGetWhitelistedRoot(from);
+    if (!root) {
+      statusEl.textContent = 'Wallet not verified — complete face verification first.';
+      btn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i> Claim G$';
+      btn.disabled = false;
+      return;
+    }
+
+    const checkAddr = root.toLowerCase() !== from.toLowerCase() ? root : from;
+    const entCheck = await ethCall(GD_UBISCHEME, SEL_CHECK_ENTITLEMENT + padAddr(checkAddr));
+    const entNoArg = entCheck === null ? await ethCall(GD_UBISCHEME, SEL_CHECK_ENTITLEMENT_NO) : entCheck;
+    if (!entNoArg || BigInt(entNoArg) === 0n) {
+      localStorage.setItem('gd-claim-date', new Date().toDateString());
+      statusEl.textContent = 'No claimable G$ right now. Come back tomorrow!';
+      btn.classList.add('hidden');
+      return;
+    }
+
     // Top up gas via faucet if needed (best-effort)
-    await gdTopGasIfNeeded(provider, from);
+    statusEl.textContent = 'Checking gas…';
+    await gdTopGasIfNeeded(from);
 
     // Send claim() transaction directly
+    statusEl.textContent = 'Sign the claim transaction…';
     const txHash = await provider.request({
       method: 'eth_sendTransaction',
-      params: [{ from, to: GD_UBISCHEME, data: SEL_CLAIM, gas: '0x30D40' }], // 200k gas
+      params: [{ from, to: GD_UBISCHEME, data: SEL_CLAIM, gas: '0x493E0' }], // 300k gas
     });
 
     statusEl.textContent = 'Confirming…';
