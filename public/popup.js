@@ -891,7 +891,7 @@ async function refreshDashboard() {
 
   // Convert every sub's cost to budget currency, then sum
   const monthly = subs.reduce((sum, s) => {
-    const cost = s.monthly_cost_usd || s.monthly_cost || 0;
+    const cost = s.monthly_cost || 0;
     const cur  = s.currency || 'USD';
     return sum + convertToTarget(cost, cur, budgetCur, rates);
   }, 0);
@@ -993,14 +993,14 @@ function renderSubs() {
   list.innerHTML = subs.map(s => {
     const health  = s.health_score || 0;
     const hColor  = health >= 80 ? 'text-tertiary' : health >= 50 ? 'text-amber-400' : 'text-error';
-    const cost    = s.monthly_cost_usd || s.monthly_cost || 0;
+    const cost    = s.monthly_cost || 0;
     const sym     = cSym(s.currency);
     return `<div class="h-[72px] glass rounded-xl px-3 flex items-center gap-3 border border-edge hover:bg-panel/40 transition-all cursor-pointer" data-action="showSubDetail" data-sub-id="${s.id}">
       <div class="flex-shrink-0">${faviconImg(s)}</div>
       <div class="flex-1 min-w-0">
         <div class="flex justify-between items-start">
           <h3 class="font-semibold text-sm truncate">${s.name}</h3>
-          <span class="font-mono text-sm font-medium">${sym}${cost}<span class="text-[10px] text-muted">/mo</span></span>
+          <span class="font-mono text-sm font-medium">${sym}${cost.toLocaleString()}<span class="text-[10px] text-muted">/mo</span></span>
         </div>
         <div class="flex items-center gap-2 mt-0.5">
           <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">${s.category || 'SaaS'}</span>
@@ -1023,7 +1023,7 @@ function showSubDetail(id) {
   if (!sub) return;
   detailSubId = id;
   const content = document.getElementById('sub-detail-content');
-  const cost = sub.monthly_cost_usd || sub.monthly_cost || 0;
+  const cost = sub.monthly_cost || 0;
   const sym = cSym(sub.currency);
   const health = sub.health_score || 0;
   const hColor = health >= 80 ? 'text-tertiary' : health >= 50 ? 'text-amber-400' : 'text-error';
@@ -1100,10 +1100,10 @@ async function runAudit(requirePayment = true) {
     if (!paid) return;
   }
   const subs    = state.subscriptions.filter(s => s.status === 'active');
-  const monthly = subs.reduce((sum, s) => sum + (s.monthly_cost_usd || s.monthly_cost || 0), 0);
-  const currencies = subs.map(s => s.currency || 'USD');
-  const mainCur = currencies.sort((a,b) => currencies.filter(v=>v===b).length - currencies.filter(v=>v===a).length)[0] || 'USD';
-  const sym = cSym(mainCur);
+  const budgetCur = state.budgetCurrency || 'USD';
+  const sym = cSym(budgetCur);
+  const rates = await getFxRates();
+  const monthly = subs.reduce((sum, s) => sum + convertToTarget(s.monthly_cost || 0, s.currency || 'USD', budgetCur, rates), 0);
   document.getElementById('audit-monthly').textContent = sym + monthly.toFixed(2);
   document.getElementById('audit-annual').textContent  = sym + (monthly * 12).toFixed(2);
 
@@ -1127,7 +1127,7 @@ async function runAudit(requirePayment = true) {
     const bc    = h >= 80 ? 'bg-tertiary' : h >= 50 ? 'bg-amber-400' : 'bg-error';
     return `<div class="flex items-center justify-between px-3 py-2.5">
       <span class="text-xs truncate flex-1">${s.name}</span>
-      <span class="text-xs font-mono mx-2">${cSym(s.currency)}${s.monthly_cost_usd || s.monthly_cost}</span>
+      <span class="text-xs font-mono mx-2">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
       <div class="w-16 bg-panel rounded-full h-1.5 mr-2"><div class="${bc} h-1.5 rounded-full" style="width:${h}%"></div></div>
       <span class="text-[10px] whitespace-nowrap">${badge}</span>
     </div>`;
@@ -1136,8 +1136,8 @@ async function runAudit(requirePayment = true) {
   const wins = [];
   overlaps.forEach(([cat, names]) => {
     const catSubs = subs.filter(s => s.category === cat);
-    const minCost = Math.min(...catSubs.map(s => s.monthly_cost_usd || s.monthly_cost || 0));
-    wins.push(`Cancel one of your ${names.length} ${cat} tools — save ~${minCost}/mo`);
+    const cheapest = catSubs.reduce((a, b) => (a.monthly_cost || 0) < (b.monthly_cost || 0) ? a : b);
+    wins.push(`Cancel one of your ${names.length} ${cat} tools — save ~${cSym(cheapest.currency)}${(cheapest.monthly_cost || 0).toLocaleString()}/mo`);
   });
   subs.filter(s => (s.health_score || 0) < 50).forEach(s => wins.push(`${s.name} has a low health score (${s.health_score}). Consider cancelling.`));
 
@@ -1330,7 +1330,7 @@ async function saveManualSub() {
     provider:        document.getElementById('add-sub-provider')?.value?.trim() || name,
     category:        document.getElementById('add-sub-category')?.value || 'saas',
     monthly_cost:    cost,
-    monthly_cost_usd: cost,
+    monthly_cost_usd: null,
     currency:        (document.getElementById('add-sub-currency')?.value?.trim() || 'USD').toUpperCase(),
     next_renewal:    document.getElementById('add-sub-renewal')?.value || null,
     status:          'active',
