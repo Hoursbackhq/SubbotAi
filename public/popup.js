@@ -961,6 +961,33 @@ function copyNegotiationEmail() {
 function refreshCredits() {
   document.getElementById('credits-balance').textContent = (state.balance || 0).toFixed(2);
   renderTxHistory();
+  fetchGDWalletBalance();
+}
+
+async function fetchGDWalletBalance() {
+  const el = document.getElementById('gd-wallet-balance');
+  if (!el) return;
+
+  // Use stored GD address, or Web3Auth address, or injected wallet
+  const storedGD = localStorage.getItem('gd-verified-addr');
+  let addr = storedGD;
+  if (!addr) {
+    try {
+      const w3a = JSON.parse(localStorage.getItem('web3auth'));
+      addr = w3a?.walletAddress;
+    } catch (_) {}
+  }
+  if (!addr) return;
+
+  try {
+    const result = await ethCall(GD_TOKEN, SEL_BALANCE_OF + padAddr(addr));
+    if (result) {
+      const balance = Number(BigInt(result)) / 1e18; // G$ has 18 decimals
+      el.textContent = balance.toFixed(2);
+    }
+  } catch (_) {
+    el.textContent = '—';
+  }
 }
 
 function renderTxHistory() {
