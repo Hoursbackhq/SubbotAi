@@ -1076,7 +1076,7 @@ async function runGmailScan() {
     scheduleRenewalNotifications();
   } catch (err) {
     console.error('Gmail scan error:', err);
-    toast(err.message || 'Scan failed — check credentials');
+    toast('Scan failed — check email and app password');
   } finally {
     if (btn) { btn.innerHTML = origText; btn.disabled = false; }
   }

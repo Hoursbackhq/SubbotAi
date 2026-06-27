@@ -299,7 +299,8 @@ app.post('/scan', async (req, res) => {
     const data = readJSON(file);
     res.json(data || { subscriptions: [] });
   } catch(e) {
-    res.status(500).json({ error: e.error || 'Scan failed', detail: e.stderr });
+    const safeError = (e.error || 'Scan failed').replace(password, '***').replace(email, '***');
+    res.status(500).json({ error: safeError });
   }
 });
 
