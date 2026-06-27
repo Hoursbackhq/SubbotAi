@@ -100,7 +100,7 @@
 </header>
 
 <!-- SHARED BOTTOM NAV -->
-<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 flex justify-around items-center px-1 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[56px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
+<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 grid grid-cols-5 items-center px-3 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[58px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
   <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard">
     <i class="fa-solid fa-gauge-high text-lg"></i><span class="label">Dash</span>
   </div>
@@ -413,7 +413,7 @@
 
 <div id="modal-add-sub" class="modal-overlay items-center" data-modal="modal-add-sub">
   <div class="bg-app w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-main text-sm">New Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
+    <div class="flex justify-between items-center mb-4"><h2 id="add-sub-title" class="font-bold text-main text-sm">New Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
     <div class="space-y-3 mb-4">
       <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Service Name *</label><input id="add-sub-name" placeholder="e.g. Claude Pro" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
       <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Provider</label><input id="add-sub-provider" placeholder="e.g. Anthropic" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
@@ -431,7 +431,7 @@
         </select>
       </div>
     </div>
-    <button data-action="saveManualSub" class="w-full py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 transition-transform">Save Subscription</button>
+    <button id="add-sub-save-btn" data-action="saveManualSub" class="w-full py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 transition-transform">Save Subscription</button>
   </div>
 </div>
 

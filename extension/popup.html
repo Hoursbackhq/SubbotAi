@@ -88,7 +88,7 @@
 </header>
 
 <!-- SHARED BOTTOM NAV -->
-<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 flex justify-around items-center px-1 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[56px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
+<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 grid grid-cols-5 items-center px-3 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[58px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
   <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard">
     <i class="fa-solid fa-gauge-high text-lg"></i><span class="label">Dash</span>
   </div>
@@ -398,7 +398,7 @@
 
 <div id="modal-add-sub" class="modal-overlay items-center" data-modal="modal-add-sub">
   <div class="bg-app w-full rounded-2xl border border-edge shadow-2xl p-4" data-modal-content>
-    <div class="flex justify-between items-center mb-3"><h2 class="font-bold text-xs text-main">Add Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-base hover:text-main"></i></button></div>
+    <div class="flex justify-between items-center mb-3"><h2 id="add-sub-title" class="font-bold text-xs text-main">Add Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-base hover:text-main"></i></button></div>
     <div class="space-y-2 mb-3">
       <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Name *</label><input id="add-sub-name" placeholder="e.g. Netflix" class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main"/></div>
       <div><label class="text-[9px] uppercase tracking-widest text-muted font-bold">Provider</label><input id="add-sub-provider" placeholder="e.g. Netflix Inc." class="w-full bg-field border border-edge rounded py-1.5 px-2.5 text-xs mt-0.5 text-main"/></div>
@@ -416,7 +416,7 @@
         </select>
       </div>
     </div>
-    <button data-action="saveManualSub" class="w-full py-2.5 rounded-xl signature-glow font-bold text-xs shadow-md active:scale-95 transition-transform">Save Subscription</button>
+    <button id="add-sub-save-btn" data-action="saveManualSub" class="w-full py-2.5 rounded-xl signature-glow font-bold text-xs shadow-md active:scale-95 transition-transform">Save Subscription</button>
   </div>
 </div>
 
