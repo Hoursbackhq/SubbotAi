@@ -656,8 +656,17 @@ async function openWeb3AuthModal() {
     saveState();
 
     const gotData = await fetchUserData(false);
-    toast(gotData ? `Welcome back!` : `Connected: ${address ? address.slice(0,6) + '…' + address.slice(-4) : payload.name || 'user'}`);
     showScreen('dashboard');
+    if (gotData) {
+      toast('Welcome back!');
+    } else {
+      // First-time user — show onboarding modal
+      if (!localStorage.getItem('subbot_onboarded')) {
+        setTimeout(() => document.getElementById('modal-welcome')?.classList.add('active'), 400);
+      } else {
+        toast(`Connected: ${address ? address.slice(0,6) + '…' + address.slice(-4) : payload.name || 'user'}`);
+      }
+    }
     // Check GD status with the login address, then also try stored GD address
     if (address) {
       const storedGD = localStorage.getItem('gd-verified-addr');
@@ -881,6 +890,10 @@ document.addEventListener('click', e => {
     case 'scanSelectAll':    document.querySelectorAll('#scan-results-list input[type="checkbox"]').forEach(cb => cb.checked = true); break;
     case 'scanSelectNone':   document.querySelectorAll('#scan-results-list input[type="checkbox"]').forEach(cb => cb.checked = false); break;
     case 'scanAnotherEmail': scanAnotherEmail(); break;
+    case 'welcomeAddManual': localStorage.setItem('subbot_onboarded','1'); document.getElementById('modal-welcome')?.classList.remove('active'); showScreen('subscriptions'); setTimeout(showAddSubModal, 300); break;
+    case 'welcomeScanEmail': localStorage.setItem('subbot_onboarded','1'); document.getElementById('modal-welcome')?.classList.remove('active'); showScreen('settings'); setTimeout(() => { document.getElementById('modal-gmail-scan')?.classList.add('active'); prefillGmailModal(); }, 300); break;
+    case 'welcomeBudget':    localStorage.setItem('subbot_onboarded','1'); document.getElementById('modal-welcome')?.classList.remove('active'); showScreen('settings'); break;
+    case 'welcomeDismiss':   localStorage.setItem('subbot_onboarded','1'); document.getElementById('modal-welcome')?.classList.remove('active'); break;
   }
 });
 

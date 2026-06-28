@@ -510,6 +510,52 @@
   </div>
 </div>
 
+<div id="modal-welcome" class="modal-overlay items-center" data-modal="modal-welcome">
+  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
+    <div class="text-center mb-5">
+      <img src="logo-64.png" alt="SubBot" class="w-14 h-14 mx-auto mb-3 rounded-xl">
+      <h2 class="font-bold text-main text-lg">Welcome to SubBot</h2>
+      <p class="text-xs text-muted mt-1">Your AI-powered subscription manager. Let's set you up:</p>
+    </div>
+    <div class="space-y-3 mb-5">
+      <!-- Card 1: Add manually (Primary) -->
+      <button data-action="welcomeAddManual" class="w-full flex items-start gap-3 p-3.5 rounded-xl border border-primary/30 bg-primary/5 hover:bg-primary/10 transition-all text-left active:scale-[0.98]">
+        <div class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+          <i class="fa-solid fa-plus text-primary text-sm"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-main">Add Subscriptions</p>
+          <p class="text-[11px] text-muted mt-0.5">Add Netflix, Spotify, or any service — name, price, and renewal date.</p>
+        </div>
+        <i class="fa-solid fa-chevron-right text-muted text-[10px] mt-3 shrink-0"></i>
+      </button>
+      <!-- Card 2: Scan email (Secondary) -->
+      <button data-action="welcomeScanEmail" class="w-full flex items-start gap-3 p-3.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover transition-all text-left active:scale-[0.98]">
+        <div class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+          <i class="fa-solid fa-envelope-open-text text-primary text-sm"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-main">Scan Gmail Inbox</p>
+          <p class="text-[11px] text-muted mt-0.5">We use a secure IMAP scan to detect billing receipts. Our AI only extracts subscription names and amounts — your emails are never stored or read by humans.</p>
+        </div>
+        <i class="fa-solid fa-chevron-right text-muted text-[10px] mt-3 shrink-0"></i>
+      </button>
+      <!-- Card 3: Set budget -->
+      <button data-action="welcomeBudget" class="w-full flex items-start gap-3 p-3.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover transition-all text-left active:scale-[0.98]">
+        <div class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
+          <i class="fa-solid fa-wallet text-primary text-sm"></i>
+        </div>
+        <div>
+          <p class="text-sm font-bold text-main">Set a Budget</p>
+          <p class="text-[11px] text-muted mt-0.5">Get push notifications when your monthly spend crosses your limit.</p>
+        </div>
+        <i class="fa-solid fa-chevron-right text-muted text-[10px] mt-3 shrink-0"></i>
+      </button>
+    </div>
+    <button data-action="welcomeDismiss" class="w-full py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-muted text-sm font-bold transition-all active:scale-95">Skip for now</button>
+  </div>
+</div>
+
 <script src="popup.js"></script>
 </div><!-- #app -->
 </body>
