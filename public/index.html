@@ -30,8 +30,8 @@
     --text-main: #0f172a;
     --text-muted: #64748b;
     --border-color: #cbd5e1;
-    --accent: #0891b2; /* cyan-600 for high light-mode contrast */
-    --accent-glow: rgba(8, 145, 178, 0.15);
+    --accent: #0e7490; /* cyan-700 for better contrast on white */
+    --accent-glow: rgba(14, 116, 144, 0.12);
     --scrollbar-thumb: #cbd5e1;
   }
   html.dark {
@@ -237,7 +237,7 @@
 <div id="screen-audit" class="screen">
   <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
     <div class="grid grid-cols-2 gap-3 mt-3">
-      <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Monthly Spend</p><p id="audit-monthly" class="font-mono text-xl font-bold text-primary mt-1">$0</p></div>
+      <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Monthly Spend</p><p id="audit-monthly" class="font-mono text-xl font-bold text-main mt-1">$0</p></div>
       <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Annual Spend</p><p id="audit-annual" class="font-mono text-xl font-bold text-sky-500 mt-1">$0</p></div>
       <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Overlaps</p><p id="audit-overlaps" class="font-mono text-xl font-bold text-error mt-1">0</p></div>
       <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Portfolio Score</p><p id="audit-health" class="font-mono text-xl font-bold text-emerald-500 mt-1">—</p></div>
@@ -347,7 +347,7 @@
     <section class="space-y-2 mt-3">
       <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Account Info</h3>
       <div class="bg-panel border border-edge rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user text-primary text-base"></i></div>
+        <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user text-muted text-base"></i></div>
         <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Your Client UUID</p><p id="settings-uuid" class="text-xs text-muted font-mono truncate mt-0.5">—</p></div>
       </div>
     </section>
@@ -375,12 +375,12 @@
       <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Gmail IMAP Credentials</h3>
       <div class="bg-panel border border-edge rounded-xl p-4 space-y-3">
         <div class="flex items-center gap-3 mb-1">
-          <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-envelope text-primary text-base"></i></div>
+          <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-envelope text-muted text-base"></i></div>
           <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Scan Inbox</p><p id="settings-email-display" class="text-xs text-muted truncate">Not configured</p></div>
         </div>
         <input id="settings-email" type="email" placeholder="you@gmail.com" class="w-full bg-field border border-edge rounded-lg py-2.5 px-3.5 text-xs text-main focus:outline-none focus:border-primary"/>
         <input id="settings-password" type="password" placeholder="Google App Password" class="w-full bg-field border border-edge rounded-lg py-2.5 px-3.5 text-xs font-mono text-main focus:outline-none focus:border-primary"/>
-        <p class="text-[10px] text-muted"><i class="fa-solid fa-circle-info text-primary mr-1"></i>Need an App Password? <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" class="text-primary hover:underline font-semibold">Create one here</a> (requires 2FA enabled)</p>
+        <p class="text-[10px] text-muted"><i class="fa-solid fa-circle-info text-muted mr-1"></i>Need an App Password? <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" class="text-primary hover:underline font-semibold">Create one here</a> (requires 2FA enabled)</p>
         <button data-action="scanGmail" class="w-full py-2.5 rounded-lg bg-primary text-white text-xs font-bold active:scale-95 flex items-center justify-center gap-2 transition-transform shadow-sm">
           <i class="fa-solid fa-magnifying-glass text-xs"></i> Run Inbox Scanner
         </button>
@@ -389,7 +389,7 @@
     <section class="space-y-2">
       <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Push Notifications</h3>
       <div class="bg-panel border border-edge rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bell text-primary text-base"></i></div>
+        <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bell text-muted text-base"></i></div>
         <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Renewal Alerts</p><p class="text-[10px] text-muted">OS-level alerts before subscriptions renew</p></div>
         <button id="push-toggle-btn" data-action="togglePushNotifications" class="px-4 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-bold active:scale-95 transition-all">Enable</button>
       </div>
@@ -468,7 +468,7 @@
       <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Gmail Address</label><input id="gmail-scan-email" type="email" placeholder="you@gmail.com" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
       <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">App Password</label><input id="gmail-scan-password" type="password" placeholder="xxxx xxxx xxxx xxxx" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs font-mono mt-1 text-main"/></div>
       <div class="bg-field border border-edge rounded-lg p-3 space-y-1.5">
-        <p class="text-[10px] font-bold text-muted uppercase tracking-wider"><i class="fa-solid fa-circle-info text-primary mr-1"></i>How to get an App Password</p>
+        <p class="text-[10px] font-bold text-muted uppercase tracking-wider"><i class="fa-solid fa-circle-info text-muted mr-1"></i>How to get an App Password</p>
         <ol class="text-[10px] text-muted space-y-1 pl-3 list-decimal">
           <li>Go to <a href="https://myaccount.google.com/security" target="_blank" rel="noopener" class="text-primary hover:underline font-semibold">Google Account Security</a></li>
           <li>Enable <strong class="text-main">2-Step Verification</strong> if not already on</li>
