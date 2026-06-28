@@ -2,7 +2,7 @@
 <html class="dark" lang="en">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SubBot — AI Subscription Manager</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png"/>
@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json"/>
 <meta name="theme-color" content="#171717"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="SubBot"/>
 <script src="tailwind.js"></script>
 <script src="tailwind-config.js"></script>
@@ -87,7 +87,7 @@
 <div id="app">
 
 <!-- SHARED HEADER -->
-<header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center px-4 border-b border-edge shadow-sm" style="background: var(--bg-header); backdrop-filter: blur(12px); height: calc(52px + env(safe-area-inset-top, 0px)); padding-top: env(safe-area-inset-top, 0px);">
+<header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center px-4 border-b border-edge h-[52px] shadow-sm" style="background: var(--bg-header); backdrop-filter: blur(12px);">
   <div class="flex items-center gap-2 font-bold text-primary">
     <img src="favicon-32.png" alt="SubBot" class="w-6 h-6 rounded"/>
     <span class="font-bold text-lg tracking-tight text-main">SubBot</span>
@@ -101,7 +101,7 @@
 </header>
 
 <!-- SHARED BOTTOM NAV -->
-<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 grid grid-cols-5 items-center px-3 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[58px]" style="background: var(--bg-nav); backdrop-filter: blur(12px); padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px)); min-height: calc(58px + env(safe-area-inset-bottom, 0px));">
+<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 grid grid-cols-5 items-center px-3 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[58px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
   <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard">
     <i class="fa-solid fa-gauge-high text-lg"></i><span class="label">Dash</span>
   </div>
@@ -161,7 +161,7 @@
 
 <!-- SCREEN: DASHBOARD -->
 <div id="screen-dashboard" class="screen">
-  <div class="screen-scroll pt-[calc(52px+env(safe-area-inset-top,0px))] pb-[calc(56px+env(safe-area-inset-bottom,0px))] px-4 space-y-5">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
     <section class="flex flex-col items-center py-2">
       <div class="relative w-[140px] h-[140px] flex items-center justify-center">
         <svg class="w-full h-full transform -rotate-90">
@@ -217,7 +217,7 @@
 
 <!-- SCREEN: SUBSCRIPTIONS -->
 <div id="screen-subscriptions" class="screen">
-  <div class="screen-scroll pt-[calc(52px+env(safe-area-inset-top,0px))] pb-[calc(56px+env(safe-area-inset-bottom,0px))]">
+  <div class="screen-scroll pt-[52px] pb-[56px]">
     <div class="px-4 pt-4 pb-3 space-y-3">
       <div class="relative">
         <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-muted text-sm"></i>
@@ -237,7 +237,7 @@
 
 <!-- SCREEN: AUDIT -->
 <div id="screen-audit" class="screen">
-  <div class="screen-scroll pt-[calc(52px+env(safe-area-inset-top,0px))] pb-[calc(56px+env(safe-area-inset-bottom,0px))] px-4 space-y-4">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
     <div class="grid grid-cols-2 gap-3 mt-3">
       <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Monthly Spend</p><p id="audit-monthly" class="font-mono text-xl font-bold text-primary mt-1">$0</p></div>
       <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Annual Spend</p><p id="audit-annual" class="font-mono text-xl font-bold text-sky-500 mt-1">$0</p></div>
@@ -258,7 +258,7 @@
 
 <!-- SCREEN: ALERTS -->
 <div id="screen-alerts" class="screen">
-  <div class="screen-scroll pt-[calc(52px+env(safe-area-inset-top,0px))] pb-[calc(56px+env(safe-area-inset-bottom,0px))] px-4 space-y-5">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
     <section class="mt-3">
       <h2 class="text-xs font-bold uppercase tracking-widest text-muted mb-3 flex items-center gap-2"><span class="w-1.5 h-3 bg-primary rounded-full"></span>Upcoming Timeline</h2>
       <div id="alerts-timeline" class="space-y-3"><p class="text-xs text-muted text-center py-4 bg-panel rounded-xl border border-edge">No upcoming renewals.</p></div>
@@ -279,7 +279,7 @@
 
 <!-- SCREEN: CREDITS -->
 <div id="screen-credits" class="screen">
-  <div class="screen-scroll pt-[calc(52px+env(safe-area-inset-top,0px))] pb-[calc(56px+env(safe-area-inset-bottom,0px))] px-4 space-y-5">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
     <!-- Balance card -->
     <div class="relative w-full rounded-2xl overflow-hidden gold-border p-5 flex flex-col justify-between amber-glow bg-gradient-to-br from-panel to-app border border-edge mt-3 shadow-xl" style="min-height:120px;">
       <div class="flex justify-between items-start">
@@ -340,7 +340,7 @@
 
 <!-- SCREEN: SETTINGS -->
 <div id="screen-settings" class="screen">
-  <div class="screen-scroll pt-[calc(52px+env(safe-area-inset-top,0px))] pb-[calc(56px+env(safe-area-inset-bottom,0px))] px-4 space-y-5">
+  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
     <section class="space-y-2 mt-3">
       <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Account Info</h3>
       <div class="bg-panel border border-edge rounded-xl p-4 flex items-center gap-3">
