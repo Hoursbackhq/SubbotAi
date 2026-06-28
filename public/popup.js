@@ -768,7 +768,7 @@ function rollRenewals() {
   if (changed) saveState();
 }
 
-function confirmRenewal(id) {
+async function confirmRenewal(id) {
   const sub = state.subscriptions.find(s => s.id === id);
   if (!sub) return;
   const d = new Date(sub.next_renewal);
@@ -777,16 +777,18 @@ function confirmRenewal(id) {
   sub.next_renewal = d.toISOString().slice(0, 10);
   delete sub.renewal_pending;
   saveState();
+  try { await fetch(`${API}/update-sub`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: { id: sub.id, next_renewal: sub.next_renewal }, userId: userId() }) }); } catch (_) {}
   toast(`${sub.name} renewed — next: ${sub.next_renewal}`);
   refreshDashboard();
 }
 
-function confirmCancellation(id) {
+async function confirmCancellation(id) {
   const sub = state.subscriptions.find(s => s.id === id);
   if (!sub) return;
   sub.status = 'cancelled';
   delete sub.renewal_pending;
   saveState();
+  try { await fetch(`${API}/update-sub`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sub: { id: sub.id, status: 'cancelled' }, userId: userId() }) }); } catch (_) {}
   toast(`${sub.name} marked as cancelled`);
   refreshDashboard();
   renderSubs();
