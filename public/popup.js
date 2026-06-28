@@ -752,6 +752,22 @@ async function loadState() {
     const d = localStorage.getItem('subbot');
     if (d) Object.assign(state, JSON.parse(d));
   } catch (_) {}
+  rollRenewals();
+}
+
+// Auto-roll past renewal dates forward by 1 month until future
+function rollRenewals() {
+  const now = new Date();
+  let changed = false;
+  (state.subscriptions || []).forEach(s => {
+    if (!s.next_renewal || s.status !== 'active') return;
+    const d = new Date(s.next_renewal);
+    if (d >= now) return;
+    while (d < now) d.setMonth(d.getMonth() + 1);
+    s.next_renewal = d.toISOString().slice(0, 10);
+    changed = true;
+  });
+  if (changed) saveState();
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
