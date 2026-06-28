@@ -755,19 +755,41 @@ async function loadState() {
   rollRenewals();
 }
 
-// Auto-roll past renewal dates forward by 1 month until future
+// Flag subs with past renewal dates as needing confirmation
 function rollRenewals() {
   const now = new Date();
   let changed = false;
   (state.subscriptions || []).forEach(s => {
     if (!s.next_renewal || s.status !== 'active') return;
+    if (s.renewal_pending) return; // already flagged
     const d = new Date(s.next_renewal);
-    if (d >= now) return;
-    while (d < now) d.setMonth(d.getMonth() + 1);
-    s.next_renewal = d.toISOString().slice(0, 10);
-    changed = true;
+    if (d < now) { s.renewal_pending = true; changed = true; }
   });
   if (changed) saveState();
+}
+
+function confirmRenewal(id) {
+  const sub = state.subscriptions.find(s => s.id === id);
+  if (!sub) return;
+  const d = new Date(sub.next_renewal);
+  const now = new Date();
+  while (d < now) d.setMonth(d.getMonth() + 1);
+  sub.next_renewal = d.toISOString().slice(0, 10);
+  delete sub.renewal_pending;
+  saveState();
+  toast(`${sub.name} renewed — next: ${sub.next_renewal}`);
+  refreshDashboard();
+}
+
+function confirmCancellation(id) {
+  const sub = state.subscriptions.find(s => s.id === id);
+  if (!sub) return;
+  sub.status = 'cancelled';
+  delete sub.renewal_pending;
+  saveState();
+  toast(`${sub.name} marked as cancelled`);
+  refreshDashboard();
+  renderSubs();
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────
@@ -959,11 +981,28 @@ async function refreshDashboard() {
   // Update strip balance from wallet
   fetchGDWalletBalance();
 
+  // Renewal confirmation prompts
+  const pending = subs.filter(s => s.renewal_pending);
+  const pendingDiv = document.getElementById('renewal-prompts');
+  if (pendingDiv) {
+    pendingDiv.innerHTML = pending.map(s => {
+      const sym = cSym(s.currency);
+      return `<div class="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2.5 mb-2">
+        <div class="flex-1 min-w-0">
+          <p class="text-xs font-bold text-main truncate">${s.name}</p>
+          <p class="text-[10px] text-muted">Renewal passed · ${sym}${(s.monthly_cost || 0).toLocaleString()}/mo</p>
+        </div>
+        <button onclick="confirmRenewal('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-bold active:scale-95">Renewed</button>
+        <button onclick="confirmCancellation('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-error/10 text-error text-[10px] font-bold active:scale-95">Cancelled</button>
+      </div>`;
+    }).join('');
+  }
+
   // Renewals list
   const renewalDiv = document.getElementById('renewals-list');
   if (!renewalDiv) return;
   const upcoming = subs
-    .filter(s => s.next_renewal)
+    .filter(s => s.next_renewal && !s.renewal_pending)
     .sort((a, b) => new Date(a.next_renewal) - new Date(b.next_renewal))
     .slice(0, 3);
 
