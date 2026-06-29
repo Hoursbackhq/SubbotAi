@@ -50,6 +50,8 @@
     --scrollbar-thumb: #424242;
   }
 
+  html { color-scheme: light; }
+  html.dark { color-scheme: dark; }
   html, body { margin:0; padding:0; height:100%; background: var(--bg-page); transition: background 0.3s; }
   body { font-family:'Inter',sans-serif; color: var(--text-main); display:flex; align-items:flex-start; justify-content:center; min-height:100svh; }
   #app { position:relative; width:100%; height:100svh; max-height:none; overflow:hidden; background: var(--bg-app); border:none; transition: background 0.3s, border-color 0.3s; }
@@ -436,7 +438,7 @@
         <div class="flex-1"><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Monthly Cost *</label><input id="add-sub-cost" type="number" min="0" step="0.01" placeholder="20.00" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main font-mono"/></div>
         <div class="w-20"><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Currency</label><input id="add-sub-currency" placeholder="USD" maxlength="3" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main font-mono"/></div>
       </div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Next Renewal</label><input id="add-sub-renewal" type="date" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
+      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Next Renewal</label><input id="add-sub-renewal" type="date" class="w-full max-w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main" style="box-sizing:border-box"/></div>
       <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Category</label>
         <select id="add-sub-category" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main">
           <option value="ai">AI Tool</option>
