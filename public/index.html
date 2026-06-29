@@ -187,9 +187,9 @@
     </div>
     <!-- Wallet strip moved to credits screen -->
     <div id="credits-strip" class="flex items-center justify-between px-4 py-3 bg-panel rounded-xl border border-edge">
-      <div class="flex items-center gap-2"><i class="fa-solid fa-wallet text-amber-500 text-lg"></i><span class="text-xs font-bold text-muted uppercase tracking-wider">Wallet Balance</span></div>
+      <div class="flex items-center gap-2"><i class="fa-solid fa-coins text-amber-500 text-lg"></i><span class="text-xs font-bold text-muted uppercase tracking-wider">Credits</span></div>
       <span id="strip-balance" class="text-sm font-mono font-bold text-main">— G$</span>
-      <button data-action="nav" data-target="credits" class="text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg active:scale-95 transition-colors">Get G$</button>
+      <button data-action="nav" data-target="credits" class="text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg active:scale-95 transition-colors">Top Up</button>
     </div>
     <div class="grid grid-cols-2 gap-3">
       <button data-action="showGmailModal" class="signature-glow font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
@@ -281,7 +281,7 @@
 <!-- SCREEN: CREDITS -->
 <div id="screen-credits" class="screen">
   <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <!-- Wallet Balance card -->
+    <!-- Credit Balance card -->
     <div class="relative w-full rounded-2xl overflow-hidden gold-border p-5 flex flex-col justify-between amber-glow bg-gradient-to-br from-panel to-app border border-edge mt-3 shadow-xl" style="min-height:120px;">
       <div class="flex justify-between items-start">
         <div class="flex items-center gap-2">
@@ -290,41 +290,31 @@
           </div>
           <span class="text-xs font-mono text-amber-500 uppercase tracking-widest font-bold">Celo Mainnet · G$</span>
         </div>
+        <div class="flex items-center gap-1.5 bg-panel/50 rounded-lg px-2 py-1">
+          <span class="text-[10px] text-muted font-bold">Ops left</span>
+          <span id="credits-ops-remaining" class="text-sm font-mono font-bold text-emerald-500">0</span>
+        </div>
       </div>
       <div class="mt-3">
-        <span class="text-[10px] text-muted uppercase tracking-widest font-bold">Wallet Balance</span>
-        <div class="flex items-baseline gap-2"><h1 id="credits-balance" class="text-3xl font-bold font-mono text-main leading-none">0.00</h1><span class="text-amber-500 font-mono font-bold">G$</span></div>
+        <span class="text-[10px] text-muted uppercase tracking-widest font-bold">Credit Balance</span>
+        <div class="flex items-baseline gap-2"><h1 id="credits-contract-balance" class="text-3xl font-bold font-mono text-main leading-none">0.00</h1><span class="text-amber-500 font-mono font-bold">G$</span></div>
         <span id="gd-wallet-balance" class="hidden">—</span>
+        <span id="credits-balance" class="hidden">0</span>
       </div>
+      <div class="flex gap-2 mt-4">
+        <input id="credits-deposit-amount" type="number" min="0.01" step="0.01" placeholder="Amount G$" class="flex-1 bg-field border border-edge rounded-lg py-2 px-3 text-xs text-main font-mono focus:outline-none focus:border-primary"/>
+        <button data-action="depositCredits" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold active:scale-95 transition-all">Deposit</button>
+      </div>
+      <button data-action="withdrawCredits" class="w-full mt-2 py-2.5 rounded-xl border border-edge bg-panel/30 hover:bg-panel/50 text-main text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
+        <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Withdraw All G$
+      </button>
+      <p class="text-[10px] text-muted mt-2">Deposit G$ to pre-pay for scans, audits, and exports. Withdraw anytime.</p>
       <div id="wallet-strip" class="hidden flex items-center justify-between mt-3 pt-3 border-t border-edge/30">
         <div class="flex items-center gap-1.5"><i class="fa-solid fa-link text-primary text-xs"></i><span class="text-[10px] font-bold text-muted">Wallet</span></div>
         <span id="strip-wallet" class="text-[11px] font-mono text-main">—</span>
         <button data-action="copyWallet" class="text-muted hover:text-main p-1" title="Copy"><i class="fa-regular fa-copy text-xs"></i></button>
       </div>
     </div>
-
-    <!-- Contract Credits -->
-    <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-primary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-muted">SubBot Credits (on-chain)</h2></div>
-      <div class="bg-panel rounded-2xl p-4 border border-edge space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs font-bold text-muted uppercase tracking-wider">Credits Balance</span>
-          <div class="flex items-baseline gap-1"><span id="credits-contract-balance" class="text-lg font-bold font-mono text-main">0.00</span><span class="text-xs text-amber-500 font-bold">G$</span></div>
-        </div>
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-muted">Ops remaining (at scan cost)</span>
-          <span id="credits-ops-remaining" class="text-sm font-mono font-bold text-emerald-500">0</span>
-        </div>
-        <div class="flex gap-2">
-          <input id="credits-deposit-amount" type="number" min="0.01" step="0.01" placeholder="Amount G$" class="flex-1 bg-field border border-edge rounded-lg py-2 px-3 text-xs text-main font-mono focus:outline-none focus:border-primary"/>
-          <button data-action="depositCredits" class="px-4 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold active:scale-95 transition-all">Deposit</button>
-        </div>
-        <button data-action="withdrawCredits" class="w-full py-2.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-main text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
-          <i class="fa-solid fa-arrow-right-from-bracket text-xs"></i> Withdraw All G$
-        </button>
-        <p class="text-[10px] text-muted">Deposit G$ to pre-pay for scans, audits, and exports. Withdraw anytime.</p>
-      </div>
-    </section>
 
     <!-- Claim G$ -->
     <section>

@@ -169,10 +169,15 @@ async function fetchCreditsBalance() {
     if (!r.ok) return;
     const d = await r.json();
     const bal = parseFloat(d.balance) || 0;
+    const balStr = bal.toFixed(2);
+    // Update all credit balance displays
     const el = document.getElementById('credits-contract-balance');
-    if (el) el.textContent = bal.toFixed(2);
+    if (el) el.textContent = balStr;
     const opsEl = document.getElementById('credits-ops-remaining');
     if (opsEl) opsEl.textContent = d.opsRemaining || 0;
+    // Update dashboard strip
+    const stripEl = document.getElementById('strip-balance');
+    if (stripEl) stripEl.textContent = balStr + ' G$';
   } catch (_) {}
 }
 
@@ -1069,8 +1074,8 @@ async function refreshDashboard() {
     hdr.textContent = subs.length ? `● ${subs.length} subs` : '● No data';
   }
 
-  // Update strip balance from wallet
-  fetchGDWalletBalance();
+  // Update strip balance from credits contract
+  fetchCreditsBalance();
 
   // Renewal confirmation prompts
   const pending = subs.filter(s => s.renewal_pending);
@@ -1396,13 +1401,7 @@ async function fetchGDWalletBalance() {
     const result = await ethCall(GD_TOKEN, SEL_BALANCE_OF + padAddr(addr));
     if (result) {
       const balance = Number(BigInt(result)) / 1e18; // G$ has 18 decimals
-      const balStr = balance.toFixed(2);
-      if (el) el.textContent = balStr;
-      // Update all balance displays
-      const creditsEl = document.getElementById('credits-balance');
-      if (creditsEl) creditsEl.textContent = balStr;
-      const stripEl = document.getElementById('strip-balance');
-      if (stripEl) stripEl.textContent = balStr + ' G$';
+      if (el) el.textContent = balance.toFixed(2);
     }
   } catch (_) {
     if (el) el.textContent = '—';
