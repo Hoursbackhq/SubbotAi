@@ -1,0 +1,29 @@
+# Pays bill jars that are due today (autopay) by calling the live API once a day.
+# Needs repo secret INTERNAL_SERVICE_TOKEN (same value as in the server's .env).
+# Optional repo variable SUBBOT_API_URL (default https://subbotai.xyz).
+name: Pay due bill jars
+
+on:
+  schedule:
+    - cron: '0 7 * * *' # 07:00 UTC = 08:00 in Lagos
+  workflow_dispatch:
+
+concurrency:
+  group: jars-run-due
+  cancel-in-progress: false
+
+jobs:
+  run-due:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: POST /jars/run-due
+        env:
+          TOKEN: ${{ secrets.INTERNAL_SERVICE_TOKEN }}
+          API: ${{ vars.SUBBOT_API_URL || 'https://subbotai.xyz' }}
+        run: |
+          if [ -z "$TOKEN" ]; then echo "::error::Set the INTERNAL_SERVICE_TOKEN repo secret"; exit 1; fi
+          curl -fsS -m 300 -X POST -H "x-internal-token: $TOKEN" "$API/jars/run-due" | tee result.json
+          echo
+          # Show skipped jars as warnings so they stand out in the run summary.
+          jq -r '.results[]? | select(.status != "delivered") | "::warning::\(.uid) jar \(.jarId): \(.status) \(.reason // "")"' result.json
