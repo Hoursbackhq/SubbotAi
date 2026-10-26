@@ -1,34 +1,38 @@
-// Tailwind CDN config — semantic CSS variable mapping for flawless Light/Dark contrast
+// Tailwind CDN config — maps utility names onto the "Kiosk Print" tokens in index.html :root
 tailwind.config = {
   darkMode: "class",
   theme: {
     extend: {
       colors: {
-        "page": "var(--bg-page)",
-        "app": "var(--bg-app)",
-        "panel": "var(--bg-card)",
-        "panel-hover": "var(--bg-card-hover)",
-        "field": "var(--bg-input)",
-        "main": "var(--text-main)",
-        "muted": "var(--text-muted)",
-        "edge": "var(--border-color)",
-        "primary": "var(--accent)",
-        "secondary": "#38bdf8",
-        "tertiary": "#34d399",
-        "error": "#f87171"
+        "page": "rgb(var(--bg-page) / <alpha-value>)",
+        "app": "rgb(var(--bg-app) / <alpha-value>)",
+        "panel": "rgb(var(--bg-card) / <alpha-value>)",
+        "panel-hover": "rgb(var(--bg-card-hover) / <alpha-value>)",
+        "field": "rgb(var(--bg-input) / <alpha-value>)",
+        "main": "rgb(var(--text-main) / <alpha-value>)",
+        "muted": "rgb(var(--text-muted) / <alpha-value>)",
+        "edge": "rgb(var(--border-color) / <alpha-value>)",
+        "primary": "rgb(var(--accent) / <alpha-value>)",
+        "on-primary": "rgb(var(--on-accent) / <alpha-value>)",
+        "secondary": "rgb(var(--text-muted) / <alpha-value>)",
+        "tertiary": "rgb(var(--ok) / <alpha-value>)",
+        "ok": "rgb(var(--ok) / <alpha-value>)",
+        "due": "rgb(var(--due) / <alpha-value>)",
+        "error": "rgb(var(--due) / <alpha-value>)",
+        "plate": "rgb(var(--plate) / <alpha-value>)"
       },
       fontFamily: {
-        "headline": ["Inter", "sans-serif"],
-        "body": ["Inter", "sans-serif"],
-        "label": ["Inter", "sans-serif"],
-        "mono": ["JetBrains Mono", "monospace"]
+        "headline": ["Space Grotesk", "sans-serif"],
+        "body": ["Space Grotesk", "sans-serif"],
+        "label": ["IBM Plex Mono", "monospace"],
+        "mono": ["IBM Plex Mono", "monospace"]
       },
       borderRadius: {
         "DEFAULT": "0.375rem",
-        "lg": "0.75rem",
-        "xl": "1rem",
-        "2xl": "1.25rem",
-        "3xl": "1.75rem",
+        "lg": "0.625rem",
+        "xl": "0.875rem",
+        "2xl": "1rem",
+        "3xl": "1.25rem",
         "full": "9999px"
       }
     }

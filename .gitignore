@@ -29,3 +29,7 @@ node_modules/
 # Build artifacts
 *.zip
 stitch/
+
+# Foundry
+build/forge/
+build/forge-cache/

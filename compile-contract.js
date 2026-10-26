@@ -7,7 +7,7 @@ const solc = require('solc');
 const fs   = require('fs');
 const path = require('path');
 
-const contracts = ['SubBotLog', 'SubBotCredits'];
+const contracts = ['SubBotLog', 'SubBotCredits', 'SubBotJars'];
 const sources   = {};
 contracts.forEach(name => {
   sources[`${name}.sol`] = {

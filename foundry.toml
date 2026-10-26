@@ -1,0 +1,7 @@
+[profile.default]
+src = "contracts"
+test = "test/forge"
+out = "build/forge"
+cache_path = "build/forge-cache"
+libs = []
+solc_version = "0.8.24"

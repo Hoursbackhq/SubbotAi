@@ -1,6 +1,7 @@
 /* popup.js — SubBot Extension (view layer for @SubmanagerAgentBot) */
 
-const API            = 'https://subbotai.xyz';
+// Local dev (localhost / LAN) talks to the server that served the page; everything else uses production.
+const API            = /^(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+)$/.test(location.hostname) ? location.origin : 'https://subbotai.xyz';
 
 // ── Telemetry ─────────────────────────────────────────────────────────────
 const _SESSION_ID = (() => {
@@ -103,9 +104,9 @@ function subFaviconUrl(sub) {
 
 function faviconImg(sub, sizeClass = 'w-10 h-10') {
   const url = subFaviconUrl(sub);
-  if (!url) return `<div class="${sizeClass} rounded-lg bg-panel flex items-center justify-center font-bold text-lg text-primary">${sub.name.charAt(0)}</div>`;
-  const initBg = sub.category === 'ai' ? 'text-primary' : 'text-secondary';
-  return `<img src="${url}" alt="${sub.name}" class="${sizeClass} rounded-lg bg-panel object-contain" onerror="this.outerHTML='<div class=\\'${sizeClass} rounded-lg bg-panel flex items-center justify-center font-bold text-lg ${initBg}\\'>${sub.name.charAt(0)}</div>'"/>`;
+  const initial = `<div class="${sizeClass} rounded-xl border border-edge grid place-items-center font-mono font-semibold text-main">${sub.name.charAt(0).toUpperCase()}</div>`;
+  if (!url) return initial;
+  return `<img src="${url}" alt="" class="${sizeClass} rounded-xl border border-edge bg-white object-contain p-1" onerror="this.outerHTML='<div class=\\'${sizeClass} rounded-xl border border-edge grid place-items-center font-mono font-semibold text-main\\'>${sub.name.charAt(0).toUpperCase()}</div>'"/>`;
 }
 
 // ── Feature flag: set to true when GoodDollar Season 2 opens ─────────────
@@ -619,11 +620,12 @@ async function claimGD() {
 
     if (receipt?.status === '0x1') {
       localStorage.setItem('gd-claim-date', new Date().toDateString());
-      statusEl.innerHTML = '<span class="text-emerald-500 font-bold">✓ Claimed! G$ added to your wallet.</span>';
+      statusEl.innerHTML = '<span class="text-ok font-semibold">Claimed. G$ added to your wallet.</span>';
       btn.classList.add('hidden');
       document.getElementById('gd-claimable').textContent = '';
       toast('G$ claimed successfully!');
       setTimeout(() => { fetchGDWalletBalance(); checkGDStatus(from); }, 3000);
+      if (typeof afterClaim === 'function') afterClaim(from, BigInt(entNoArg)); // pay.js: split into bill jars
     } else {
       statusEl.textContent = 'Transaction failed — try again.';
       btn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i> Retry';
@@ -1117,13 +1119,17 @@ async function refreshDashboard() {
 
   const pct = Math.min(100, Math.round(monthly / budget * 100));
 
-  document.getElementById('dash-spend').textContent  = budgetSym + monthly.toFixed(0);
-  document.getElementById('dash-budget').textContent = '/ ' + budgetSym + budget;
+  document.getElementById('dash-spend').textContent  = budgetSym + Math.round(monthly).toLocaleString();
+  document.getElementById('dash-budget').textContent = '/ ' + budgetSym + Number(budget).toLocaleString();
   document.getElementById('dash-pct').textContent    = pct + '%';
-  const ring = document.getElementById('budget-ring');
-  if (ring) {
-    ring.setAttribute('stroke-dashoffset', 376.99 * (1 - pct / 100));
-    ring.classList.toggle('text-error', pct >= 100);
+  const dateEl = document.getElementById('dash-date');
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+  const bar = document.getElementById('budget-bar');
+  if (bar) {
+    const lit = Math.round(pct / 5);
+    bar.innerHTML = Array.from({ length: 20 }, (_, i) => `<i class="${i < lit ? 'on' : ''}"></i>`).join('');
+    bar.classList.toggle('over', pct >= 100);
+    bar.setAttribute('aria-label', `${pct}% of budget used`);
   }
 
   // Push notification when budget exceeded (once per day)
@@ -1142,7 +1148,7 @@ async function refreshDashboard() {
   }
 
   document.getElementById('stat-count').textContent    = subs.length;
-  document.getElementById('stat-annual').textContent   = budgetSym + (monthly * 12).toFixed(0);
+  document.getElementById('stat-annual').textContent   = budgetSym + Math.round(monthly * 12).toLocaleString();
 
   const now  = new Date();
   const soon = subs.filter(s => s.next_renewal && (new Date(s.next_renewal) - now) / 86400000 <= 30).length;
@@ -1150,7 +1156,7 @@ async function refreshDashboard() {
 
   const hdr = document.getElementById('header-status');
   if (hdr) {
-    hdr.textContent = subs.length ? `● ${subs.length} subs` : '● No data';
+    hdr.textContent = subs.length ? `${subs.length} subs` : 'No data';
   }
 
   // Update strip balance from credits contract
@@ -1162,13 +1168,13 @@ async function refreshDashboard() {
   if (pendingDiv) {
     pendingDiv.innerHTML = pending.map(s => {
       const sym = cSym(s.currency);
-      return `<div class="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2.5 mb-2">
+      return `<div class="flex items-center gap-3 border border-due/40 bg-due/5 rounded-2xl px-3.5 py-3 mb-2">
         <div class="flex-1 min-w-0">
-          <p class="text-xs font-bold text-main truncate">${s.name}</p>
-          <p class="text-[10px] text-muted">Renewal passed · ${sym}${(s.monthly_cost || 0).toLocaleString()}/mo</p>
+          <p class="text-sm font-semibold text-main truncate">${s.name}</p>
+          <p class="text-xs text-due">Renewal date passed · ${sym}${(s.monthly_cost || 0).toLocaleString()}/mo</p>
         </div>
-        <button onclick="confirmRenewal('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-bold active:scale-95">Renewed</button>
-        <button onclick="confirmCancellation('${s.id}')" class="px-2.5 py-1.5 rounded-lg bg-error/10 text-error text-[10px] font-bold active:scale-95">Cancelled</button>
+        <button onclick="confirmRenewal('${s.id}')" class="btn-line px-3 py-2 text-xs">Renewed</button>
+        <button onclick="confirmCancellation('${s.id}')" class="px-3 py-2 rounded-full text-due text-xs font-semibold">Cancelled</button>
       </div>`;
     }).join('');
   }
@@ -1182,19 +1188,17 @@ async function refreshDashboard() {
     .slice(0, 3);
 
   if (!upcoming.length) {
-    renewalDiv.innerHTML = '<div class="text-xs text-muted text-center py-3">No upcoming renewals.</div>';
+    renewalDiv.innerHTML = '<div class="text-sm text-muted py-4">No upcoming renewals.</div>';
     return;
   }
-  renewalDiv.innerHTML = upcoming.map(s => {
+  renewalDiv.innerHTML = upcoming.map((s, i) => {
     const days    = Math.ceil((new Date(s.next_renewal) - now) / 86400000);
-    const color   = days <= 3 ? 'bg-error shadow-[0_0_8px_rgba(255,180,171,0.6)]' : days <= 7 ? 'bg-amber-400' : 'bg-tertiary';
-    const dateStr = new Date(s.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    return `<div class="bg-panel p-3 rounded-xl flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-1.5 h-1.5 rounded-full ${color}"></div>
-        <div><p class="text-sm font-semibold">${s.name}</p><p class="text-[10px] text-muted font-mono">${dateStr} · ${cSym(s.currency)}${s.monthly_cost}</p></div>
-      </div>
-      <i class="fa-solid fa-chevron-right text-muted text-[10px]"></i>
+    const when    = days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days}d`;
+    const dateStr = new Date(s.next_renewal).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer" data-action="showSubDetail" data-sub-id="${s.id}">
+      <span class="font-mono text-xs text-muted w-5">${String(i + 1).padStart(2, '0')}</span>
+      <div class="flex-1 min-w-0"><p class="text-[15px] font-medium text-main truncate">${s.name}</p><p class="font-mono text-xs ${days <= 3 ? 'text-due' : 'text-muted'}">${dateStr} · ${when}</p></div>
+      <span class="font-mono text-sm text-main">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
     </div>`;
   }).join('');
 }
@@ -1206,11 +1210,10 @@ function setFilter(f) {
   currentFilter = f;
   document.querySelectorAll('.filter-chip').forEach(c => {
     const on = c.dataset.filter === f;
-    c.classList.toggle('bg-primary/20', on);
-    c.classList.toggle('text-primary', on);
-    c.classList.toggle('bg-panel', !on);
-    c.classList.toggle('text-muted', !on);
-    c.classList.toggle('border', !on);
+    c.classList.toggle('bg-main', on);
+    c.classList.toggle('text-app', on);
+    c.classList.toggle('border-main', on);
+    c.classList.toggle('text-main', !on);
     c.classList.toggle('border-edge', !on);
   });
   renderSubs();
@@ -1219,36 +1222,28 @@ function setFilter(f) {
 function renderSubs() {
   const list = document.getElementById('subs-list');
   if (!list) return;
+  if (!document.querySelector('.filter-chip.bg-main')) setFilter(currentFilter);
   let subs = state.subscriptions.filter(s => s.status === 'active');
   if (currentFilter !== 'all') subs = subs.filter(s => (s.category || '').toLowerCase() === currentFilter);
   if (searchQ) subs = subs.filter(s => s.name.toLowerCase().includes(searchQ));
   if (!subs.length) {
-    list.innerHTML = '<div class="text-xs text-muted text-center py-6">No subscriptions found.</div>';
+    list.innerHTML = `<div class="flex items-center gap-4 py-6"><img src="art/spots/search.webp" alt="" class="w-16 h-16 object-contain"/><p class="text-sm text-muted">${state.subscriptions.length ? 'Nothing matches that.' : 'No subscriptions yet. Tap + to add one, or scan Gmail from Settings.'}</p></div>`;
     return;
   }
-  list.innerHTML = subs.map(s => {
-    const health  = s.health_score || 0;
-    const hColor  = health >= 80 ? 'text-tertiary' : health >= 50 ? 'text-amber-400' : 'text-error';
-    const cost    = s.monthly_cost || 0;
-    const sym     = cSym(s.currency);
-    return `<div class="h-[72px] glass rounded-xl px-3 flex items-center gap-3 border border-edge hover:bg-panel/40 transition-all cursor-pointer" data-action="showSubDetail" data-sub-id="${s.id}">
+  const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  list.innerHTML = subs.map((s, i) => {
+    const cost = s.monthly_cost || 0;
+    const tags = [];
+    if (s.is_trial && s.trial_ends) tags.push(`<span class="text-due">trial ends ${fmtDate(s.trial_ends)}</span>`);
+    if (!s.is_trial && s.price_changed_at) tags.push('<span class="text-due">price went up</span>');
+    if (s.next_renewal) tags.push(`<span>renews ${fmtDate(s.next_renewal)}</span>`);
+    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer" data-action="showSubDetail" data-sub-id="${s.id}">
       <div class="flex-shrink-0">${faviconImg(s)}</div>
       <div class="flex-1 min-w-0">
-        <div class="flex justify-between items-start">
-          <h3 class="font-semibold text-sm truncate">${s.name}</h3>
-          <span class="font-mono text-sm font-medium">${sym}${cost.toLocaleString()}<span class="text-[10px] text-muted">/mo</span></span>
-        </div>
-        <div class="flex items-center gap-2 mt-0.5">
-          <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">${s.category || 'SaaS'}</span>
-          <span class="${hColor} text-[10px] font-mono">♥ ${health}</span>
-          ${s.is_trial && s.trial_ends ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-bold">TRIAL — ends ${new Date(s.trial_ends).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>` : ''}
-          ${!s.is_trial && s.price_changed_at ? `<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-sky-500/10 text-sky-500 font-bold">Price changed</span>` : ''}
-          ${s.next_renewal ? `<span class="text-[10px] text-muted ml-auto">Renew: ${new Date(s.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>` : ''}
-        </div>
+        <p class="text-[15px] font-medium text-main truncate">${s.name}</p>
+        <p class="font-mono text-xs text-muted truncate">${(s.category || 'other').toLowerCase()}${tags.length ? ' · ' + tags.join(' · ') : ''}</p>
       </div>
-      <button data-action="deleteSub" data-sub-id="${s.id}" class="flex-shrink-0 p-1.5 rounded-lg hover:bg-error/10 text-muted hover:text-error transition-colors" title="Delete">
-        <i class="fa-solid fa-trash-can text-xs"></i>
-      </button>
+      <p class="font-mono text-sm text-main shrink-0">${cSym(s.currency)}${cost.toLocaleString()}<span class="text-muted">/mo</span></p>
     </div>`;
   }).join('');
 }
@@ -1264,50 +1259,37 @@ function showSubDetail(id) {
   const cost = sub.monthly_cost || 0;
   const sym = cSym(sub.currency);
   const health = sub.health_score || 0;
-  const hColor = health >= 80 ? 'text-tertiary' : health >= 50 ? 'text-amber-400' : 'text-error';
-  const created = sub.created_at ? new Date(sub.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
-  const renewal = sub.next_renewal ? new Date(sub.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
+  const fmt = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+  const created = sub.created_at ? fmt(sub.created_at) : '—';
+  const renewal = sub.next_renewal ? fmt(sub.next_renewal) : '—';
   const cancelUrl = sub.cancel_url || `https://www.google.com/search?q=${encodeURIComponent(`how to cancel ${sub.name} subscription`)}`;
   const history = sub.price_history || [];
+  const row = (k, v, cls = 'text-main') => `<div class="flex justify-between py-2.5 rule-t"><span class="mono-label">${k}</span><span class="font-mono text-sm ${cls}">${v}</span></div>`;
 
   const trialBanner = sub.is_trial && sub.trial_ends
-    ? `<div class="bg-amber-500/10 border border-amber-500/30 rounded-lg p-2.5 flex items-center gap-2">
-         <i class="fa-solid fa-hourglass-half text-amber-500 text-sm"></i>
-         <p class="text-xs text-amber-600 dark:text-amber-400 font-semibold">Free trial ends ${new Date(sub.trial_ends).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} — you'll be charged ${sym}${cost}/mo after that</p>
-       </div>`
+    ? `<p class="text-sm text-due border border-due/40 bg-due/5 rounded-xl p-3">Free trial ends ${fmt(sub.trial_ends)}. After that you'll be charged ${sym}${cost}/mo.</p>`
     : '';
-
-  const priceHistoryBlock = history.length
-    ? `<div class="bg-panel rounded-lg p-2.5">
-         <p class="text-[10px] text-muted uppercase tracking-wider mb-1.5">Price History</p>
-         <div class="space-y-1">
-           ${history.map(h => `<div class="flex justify-between text-xs"><span class="text-muted">${h.date}</span><span class="font-mono">${cSym(h.currency)}${h.amount}/mo</span></div>`).join('')}
-           <div class="flex justify-between text-xs font-semibold"><span class="text-muted">Now</span><span class="font-mono text-main">${sym}${cost}/mo</span></div>
-         </div>
-       </div>`
+  const priceHistory = history.length
+    ? `<div><p class="mono-label mb-1">Price history</p>${history.map(h => row(h.date, `${cSym(h.currency)}${h.amount}/mo`, 'text-muted')).join('')}${row('Now', `${sym}${cost}/mo`)}</div>`
     : '';
 
   content.innerHTML = `
-    <div class="flex items-center gap-3 mb-2">
+    <div class="flex items-center gap-3">
       ${faviconImg(sub, 'w-12 h-12')}
-      <div>
-        <h3 class="text-lg font-bold">${sub.name}</h3>
-        <p class="text-xs text-muted">${sub.provider || sub.name}</p>
-      </div>
+      <div class="min-w-0"><h3 class="text-xl font-semibold text-main truncate">${sub.name}</h3><p class="text-sm text-muted">${sub.provider || sub.name}</p></div>
     </div>
+    <p class="display-num text-[40px] text-main">${sym}${cost.toLocaleString()}<span class="font-mono text-sm text-muted font-normal tracking-normal">/mo</span></p>
     ${trialBanner}
-    <div class="grid grid-cols-2 gap-2">
-      <div class="bg-panel rounded-lg p-2.5"><p class="text-[10px] text-muted uppercase tracking-wider">Cost</p><p class="text-sm font-bold font-mono">${sym}${cost}/mo</p></div>
-      <div class="bg-panel rounded-lg p-2.5"><p class="text-[10px] text-muted uppercase tracking-wider">Category</p><p class="text-sm font-semibold capitalize">${sub.category || 'Other'}</p></div>
-      <div class="bg-panel rounded-lg p-2.5"><p class="text-[10px] text-muted uppercase tracking-wider">Renewal</p><p class="text-sm font-mono">${renewal}</p></div>
-      <div class="bg-panel rounded-lg p-2.5"><p class="text-[10px] text-muted uppercase tracking-wider">Health</p><p class="text-sm font-bold font-mono ${hColor}">♥ ${health}/100</p></div>
-      <div class="bg-panel rounded-lg p-2.5"><p class="text-[10px] text-muted uppercase tracking-wider">Currency</p><p class="text-sm font-mono">${sub.currency || 'USD'}</p></div>
-      <div class="bg-panel rounded-lg p-2.5"><p class="text-[10px] text-muted uppercase tracking-wider">Added</p><p class="text-sm font-mono">${created}</p></div>
+    <div>
+      ${row('Renews', renewal)}
+      ${row('Category', (sub.category || 'other').toLowerCase())}
+      ${row('Health', `${health}/100`, health >= 80 ? 'text-ok' : health >= 50 ? 'text-main' : 'text-due')}
+      ${row('Added', created)}
     </div>
-    ${priceHistoryBlock}
-    <div class="flex gap-2">
-      <button data-action="draftEmail" data-service="${sub.name}" class="flex-1 py-2.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-main text-xs font-bold flex items-center justify-center gap-1.5 transition-all"><i class="fa-solid fa-envelope-open-text text-xs"></i> Negotiate</button>
-      <button data-action="cancelSubscription" data-url="${cancelUrl}" class="flex-1 py-2.5 rounded-xl border border-error/30 bg-error/5 hover:bg-error/10 text-error text-xs font-bold flex items-center justify-center gap-1.5 transition-all"><i class="fa-solid fa-ban text-xs"></i> Cancel Subscription</button>
+    ${priceHistory}
+    <div class="grid grid-cols-2 gap-2 pt-1">
+      <button data-action="draftEmail" data-service="${sub.name}" class="btn-line py-3 text-sm">Ask for a discount</button>
+      <button data-action="cancelSubscription" data-url="${cancelUrl}" class="btn-act py-3 text-sm">How to cancel</button>
     </div>`;
   document.getElementById('modal-sub-detail')?.classList.add('active');
 }
@@ -1367,47 +1349,47 @@ async function runAudit(requirePayment = true) {
   const sym = cSym(budgetCur);
   const rates = await getFxRates();
   const monthly = subs.reduce((sum, s) => sum + convertToTarget(s.monthly_cost || 0, s.currency || 'USD', budgetCur, rates), 0);
-  document.getElementById('audit-monthly').textContent = sym + monthly.toFixed(2);
-  document.getElementById('audit-annual').textContent  = sym + (monthly * 12).toFixed(2);
+  document.getElementById('audit-monthly').textContent = sym + Math.round(monthly).toLocaleString();
+  document.getElementById('audit-annual').textContent  = sym + Math.round(monthly * 12).toLocaleString();
 
   const cats = {};
   subs.forEach(s => { const c = s.category || 'other'; cats[c] = (cats[c] || []).concat(s.name); });
-  const overlaps = Object.entries(cats).filter(([, names]) => names.length > 1);
-  document.getElementById('audit-overlaps').textContent = overlaps.length;
+  const overlaps = Object.entries(cats).filter(([cat, names]) => names.length > 1 && cat !== 'data');
+  const ov = document.getElementById('audit-overlaps');
+  ov.textContent = overlaps.length;
+  ov.classList.toggle('text-due', overlaps.length > 0);
 
   const avgHealth = subs.length ? Math.round(subs.reduce((s, x) => s + (x.health_score || 0), 0) / subs.length) : 0;
-  document.getElementById('audit-health').textContent = avgHealth + '/100';
+  document.getElementById('audit-health').textContent = subs.length ? avgHealth + '/100' : '—';
 
   const oDiv = document.getElementById('overlaps-list');
   oDiv.innerHTML = overlaps.length
-    ? overlaps.map(([cat, names]) => `<div class="bg-panel p-3 rounded-xl border-l-2 border-error/50 text-xs"><p class="font-medium">${cat.toUpperCase()} overlap</p><p class="text-muted mt-0.5">${names.join(' + ')}</p></div>`).join('')
-    : '<p class="text-xs text-muted text-center py-2">No overlaps detected. 🎉</p>';
+    ? overlaps.map(([cat, names], i) => `<div class="py-3 ${i ? 'rule-t' : ''}"><p class="text-main">${names.length} ${cat} tools doing similar jobs</p><p class="font-mono text-xs text-muted mt-0.5">${names.join(' · ')}</p></div>`).join('')
+    : '<p class="text-sm text-muted">No overlapping subscriptions found.</p>';
 
   const rows = document.getElementById('health-rows');
-  rows.innerHTML = subs.map(s => {
-    const h     = s.health_score || 0;
-    const badge = h >= 80 ? '✅ Keep' : h >= 50 ? '⚠️ Reconsider' : '❌ Cancel';
-    const bc    = h >= 80 ? 'bg-tertiary' : h >= 50 ? 'bg-amber-400' : 'bg-error';
-    return `<div class="flex items-center justify-between px-3 py-2.5">
-      <span class="text-xs truncate flex-1">${s.name}</span>
-      <span class="text-xs font-mono mx-2">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
-      <div class="w-16 bg-panel rounded-full h-1.5 mr-2"><div class="${bc} h-1.5 rounded-full" style="width:${h}%"></div></div>
-      <span class="text-[10px] whitespace-nowrap">${badge}</span>
+  rows.innerHTML = subs.map((s, i) => {
+    const h = s.health_score || 0;
+    const verdict = h >= 80 ? ['keep', 'text-ok'] : h >= 50 ? ['review', 'text-main'] : ['cancel', 'text-due'];
+    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''}">
+      <span class="text-[15px] text-main truncate flex-1">${s.name}</span>
+      <span class="font-mono text-sm text-main">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
+      <span class="font-mono text-xs w-20 text-right ${verdict[1]}">${h} · ${verdict[0]}</span>
     </div>`;
-  }).join('') || '<p class="text-xs text-muted text-center py-3">No data.</p>';
+  }).join('') || '<p class="text-sm text-muted py-3">No services to audit yet.</p>';
 
   const wins = [];
   overlaps.forEach(([cat, names]) => {
     const catSubs = subs.filter(s => s.category === cat);
     const cheapest = catSubs.reduce((a, b) => (a.monthly_cost || 0) < (b.monthly_cost || 0) ? a : b);
-    wins.push(`Cancel one of your ${names.length} ${cat} tools — save ~${cSym(cheapest.currency)}${(cheapest.monthly_cost || 0).toLocaleString()}/mo`);
+    wins.push(`Drop one of your ${names.length} ${cat} tools to save about ${cSym(cheapest.currency)}${(cheapest.monthly_cost || 0).toLocaleString()}/mo.`);
   });
-  subs.filter(s => (s.health_score || 0) < 50).forEach(s => wins.push(`${s.name} has a low health score (${s.health_score}). Consider cancelling.`));
+  subs.filter(s => (s.health_score || 0) < 50).forEach(s => wins.push(`${s.name} scores ${s.health_score}/100. Worth cancelling?`));
 
   const qd = document.getElementById('quick-wins');
   qd.innerHTML = wins.length
-    ? wins.map(w => `<div class="bg-panel p-3 rounded-xl border-l-2 border-primary text-xs">${w}</div>`).join('')
-    : '<p class="text-xs text-muted text-center py-2">No easy wins — you\'re well optimised!</p>';
+    ? wins.map((w, i) => `<div class="flex gap-3 py-3 ${i ? 'rule-t' : ''}"><span class="font-mono text-xs text-primary pt-0.5">${String(i + 1).padStart(2, '0')}</span><p class="text-main">${w}</p></div>`).join('')
+    : '<p class="text-sm text-muted">Nothing to cut right now.</p>';
 }
 
 // ── Alerts ────────────────────────────────────────────────────────────────
@@ -1419,46 +1401,30 @@ function renderAlerts() {
   const tl = document.getElementById('alerts-timeline');
   if (!tl) return;
   if (!upcoming.length) {
-    tl.innerHTML = '<p class="text-xs text-muted text-center py-3">No upcoming renewals.</p>';
+    tl.innerHTML = '<p class="text-sm text-muted">No upcoming renewals.</p>';
   } else {
-    tl.innerHTML = upcoming.map(s => {
-      const days     = Math.ceil((new Date(s.next_renewal) - now) / 86400000);
-      const dotColor = days <= 3 ? 'bg-error ring-error/20 pulse-dot' : days <= 7 ? 'bg-amber-400 ring-amber-400/20' : 'bg-tertiary ring-tertiary/20';
-      const urgLabel = days <= 3
-        ? `<span class="text-[10px] text-error font-medium">⚠️ Renews in ${days} day${days === 1 ? '' : 's'}</span>`
-        : `<span class="text-[10px] text-secondary">Renews in ${days} days</span>`;
+    tl.innerHTML = upcoming.map((s, i) => {
+      const days = Math.ceil((new Date(s.next_renewal) - now) / 86400000);
       const d = new Date(s.next_renewal);
-      return `<div class="relative flex items-start gap-4">
-        <div class="flex flex-col items-end pt-1 w-8 flex-shrink-0">
-          <span class="font-mono text-[10px] text-muted font-bold">${d.toLocaleString('en-US', { month: 'short' })}</span>
-          <span class="font-mono text-lg text-main leading-none">${d.getDate()}</span>
-        </div>
-        <div class="relative z-10 mt-2.5 flex-shrink-0"><div class="w-3 h-3 rounded-full ${dotColor} ring-4"></div></div>
-        <div class="flex-1 bg-panel rounded-xl p-3 border border-edge">
-          <div class="flex justify-between items-start">
-            <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-muted">${s.provider || ''}</p></div>
-            <span class="font-mono text-sm">${cSym(s.currency)}${s.monthly_cost}</span>
-          </div>
-          <div class="mt-1.5">${urgLabel}</div>
-        </div>
+      const when = days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
+      return `<div class="flex items-center gap-4 py-3 ${i ? 'rule-t' : ''}">
+        <div class="w-10 text-center shrink-0"><p class="font-mono text-[11px] uppercase text-muted">${d.toLocaleString('en-GB', { month: 'short' })}</p><p class="display-num text-2xl ${days <= 3 ? 'text-due' : 'text-main'}">${d.getDate()}</p></div>
+        <div class="flex-1 min-w-0"><p class="text-[15px] text-main truncate">${s.name}</p><p class="font-mono text-xs ${days <= 3 ? 'text-due' : 'text-muted'}">renews ${when}</p></div>
+        <span class="font-mono text-sm text-main">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
       </div>`;
     }).join('');
   }
 
   const neg = document.getElementById('negotiate-list');
   if (!neg) return;
-  const eligible = state.subscriptions.filter(s => (s.health_score || 0) < 70 && s.status === 'active');
+  const eligible = state.subscriptions.filter(s => (s.health_score || 0) < 70 && s.status === 'active' && s.category !== 'data');
   neg.innerHTML = eligible.length
-    ? eligible.map(s => `<div class="bg-panel rounded-2xl p-4 border border-edge">
-        <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-lg bg-panel flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
-          <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-tertiary">Eligible for discount</p></div>
-        </div>
-        <button data-action="draftEmail" data-service="${s.name}" class="w-full py-2 px-4 rounded-xl border border-secondary text-secondary text-xs font-semibold flex items-center justify-center gap-2">
-          <i class="fa-solid fa-envelope text-sm"></i> Draft Email
-        </button>
+    ? eligible.map((s, i) => `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''}">
+        ${faviconImg(s)}
+        <div class="flex-1 min-w-0"><p class="text-[15px] text-main truncate">${s.name}</p><p class="font-mono text-xs text-muted">may offer a retention discount</p></div>
+        <button data-action="draftEmail" data-service="${s.name}" class="btn-line px-3.5 py-2 text-xs shrink-0">Draft email</button>
       </div>`).join('')
-    : '<p class="text-xs text-muted text-center py-3">All subscriptions look healthy!</p>';
+    : '<p class="text-sm text-muted">Everything looks fairly priced.</p>';
 }
 
 async function draftEmail(serviceName) {
@@ -1643,7 +1609,7 @@ async function saveManualSub() {
     const days = Math.ceil((new Date(sub.next_renewal) - new Date()) / 86400000);
     if (days >= 0 && days <= 7) {
       setTimeout(() => {
-        toast(`⚠️ ${sub.name} renews in ${days} day${days === 1 ? '' : 's'}!`);
+        toast(`${sub.name} renews in ${days} day${days === 1 ? '' : 's'}!`);
         showAlertBadge();
       }, 500);
     }
@@ -1656,7 +1622,7 @@ function showAlertBadge() {
   if (alertNav && !document.getElementById('alert-badge')) {
     const badge = document.createElement('span');
     badge.id = 'alert-badge';
-    badge.className = 'absolute -top-1 -right-1 w-2.5 h-2.5 bg-error rounded-full animate-pulse';
+    badge.className = 'absolute top-3 left-[calc(50%+6px)] w-2 h-2 bg-due rounded-full';
     alertNav.style.position = 'relative';
     alertNav.appendChild(badge);
   }
@@ -1697,14 +1663,7 @@ function resetBot() {
 
 // ── Prefs toggle ──────────────────────────────────────────────────────────
 function togglePref(btn) {
-  const on = btn.dataset.on !== 'true';
-  btn.dataset.on = String(on);
-  btn.classList.toggle('bg-primary/20', on);
-  btn.classList.toggle('bg-panel', !on);
-  const dot = btn.querySelector('div');
-  dot.classList.toggle('bg-primary', on);
-  dot.classList.toggle('bg-outline', !on);
-  dot.classList.toggle('ml-auto', on);
+  btn.dataset.on = String(btn.dataset.on !== 'true'); // styled from data-on in index.html
 }
 
 // ── Share ─────────────────────────────────────────────────────────────────
@@ -1858,7 +1817,7 @@ function toggleTheme() {
 
 function applyTheme() {
   const saved = localStorage.getItem('subbot-theme');
-  const isDark = saved !== 'light';
+  const isDark = saved === 'dark';
   document.documentElement.classList.toggle('dark', isDark);
 }
 
@@ -1904,23 +1863,18 @@ function showScanConfirmModal(found) {
     const cur = cSym(s.currency);
     const cost = s.monthly_cost ? `${cur}${s.monthly_cost.toLocaleString()}` : '—';
     const statusBadge = s.status === 'cancelled'
-      ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-error/10 text-error font-bold">Cancelled</span>'
-      : '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 font-bold">Active</span>';
+      ? '<span class="text-due">cancelled</span>'
+      : '<span class="text-ok">active</span>';
     const dupBadge = alreadyExists
-      ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-bold">Already tracked</span>'
+      ? '<span>already tracked</span>'
       : '';
 
-    return `<label class="flex items-center gap-3 p-3 bg-panel rounded-xl border border-edge cursor-pointer hover:bg-panel-hover transition-colors">
-      <input type="checkbox" value="${i}" ${!alreadyExists && s.status !== 'cancelled' ? 'checked' : ''} class="w-4 h-4 rounded accent-primary flex-shrink-0"/>
+    return `<label class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer">
+      <input type="checkbox" value="${i}" ${!alreadyExists && s.status !== 'cancelled' ? 'checked' : ''} class="w-5 h-5 accent-[rgb(var(--act))] flex-shrink-0"/>
+      ${faviconImg(s, 'w-9 h-9')}
       <div class="flex-1 min-w-0">
-        <div class="flex items-center gap-2">
-          ${faviconImg(s, 'w-6 h-6')}
-          <span class="text-xs font-bold text-main truncate">${s.name}</span>
-        </div>
-        <div class="flex items-center gap-1.5 mt-1">
-          ${statusBadge} ${dupBadge}
-          <span class="text-[10px] text-muted font-mono">${cost}/mo</span>
-        </div>
+        <p class="text-[15px] text-main truncate">${s.name}</p>
+        <p class="font-mono text-xs text-muted">${cost}/mo · ${statusBadge}${dupBadge ? ' · ' + dupBadge : ''}</p>
       </div>
     </label>`;
   }).join('');
@@ -2028,8 +1982,8 @@ function renderPushToggle() {
   const enabled = ('Notification' in window) && Notification.permission === 'granted' && localStorage.getItem('push-enabled') !== 'false';
   btn.textContent = enabled ? 'Disable' : 'Enable';
   btn.className = enabled
-    ? 'px-4 py-1.5 rounded-lg bg-error/10 text-error text-xs font-bold active:scale-95 transition-all'
-    : 'px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold active:scale-95 transition-all';
+    ? 'btn-line px-3.5 py-2 text-xs'
+    : 'btn-act px-3.5 py-2 text-xs';
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
@@ -2086,7 +2040,7 @@ async function init() {
       Math.ceil((new Date(s.next_renewal) - now) / 86400000) >= 0
     );
     if (urgent.length) {
-      toast(`⚠️ ${urgent.length} subscription${urgent.length > 1 ? 's' : ''} renew${urgent.length === 1 ? 's' : ''} within 3 days!`);
+      toast(`${urgent.length} subscription${urgent.length > 1 ? 's' : ''} renew${urgent.length === 1 ? 's' : ''} within 3 days!`);
       showAlertBadge();
     }
   }, 2000);

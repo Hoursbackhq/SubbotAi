@@ -1,8 +1,10 @@
-const CACHE_NAME = 'subbot-v12';
+const CACHE_NAME = 'subbot-v13';
 const SHELL_ASSETS = [
   '/',
   '/index.html',
   '/popup.js',
+  '/pay.js',
+  '/art/rooftop.webp',
   '/tailwind.js',
   '/tailwind-config.js',
   '/manifest.json',
@@ -32,8 +34,15 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Network-only for API calls
-  if (url.pathname.startsWith('/subs') ||
+  // Network-only for API calls (and anything that isn't a GET — the Cache API can't store those)
+  if (e.request.method !== 'GET' ||
+      url.pathname.startsWith('/bills') ||
+      url.pathname.startsWith('/jars') ||
+      url.pathname.startsWith('/data/') ||
+      url.pathname.startsWith('/wallet') ||
+      url.pathname.startsWith('/auth') ||
+      url.pathname.startsWith('/credits') ||
+      url.pathname.startsWith('/subs') ||
       url.pathname.startsWith('/scan') ||
       url.pathname.startsWith('/vault') ||
       url.pathname.startsWith('/charge') ||

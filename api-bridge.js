@@ -18,6 +18,8 @@ const { ethers } = require('ethers');
 // On-chain contracts (SubBotLog + SubBotCredits)
 let logContract    = null;
 let creditsContract = null;
+let jarsContract    = null;
+let gdAutopay       = null; // agent wallet that pulls approved G$ for jar autopay
 
 (async () => {
   const privateKey = process.env.AGENT_PRIVATE_KEY;
@@ -43,6 +45,14 @@ let creditsContract = null;
       const creditsABI = require('./build/SubBotCredits.abi.json');
       creditsContract  = new ethers.Contract(process.env.CREDITS_CONTRACT_ADDRESS, creditsABI, wallet);
       console.log(`[SubBot] Credits active        → ${process.env.CREDITS_CONTRACT_ADDRESS}`);
+    }
+
+    gdAutopay = require('./bills').createGdAutopay(wallet);
+
+    if (process.env.JARS_CONTRACT_ADDRESS) {
+      const jarsABI = require('./build/SubBotJars.abi.json');
+      jarsContract  = new ethers.Contract(process.env.JARS_CONTRACT_ADDRESS, jarsABI, wallet);
+      console.log(`[SubBot] Bill jars active      → ${process.env.JARS_CONTRACT_ADDRESS}`);
     }
   } catch (e) {
     console.warn('[SubBot] Contract init failed:', e.message);
@@ -968,6 +978,15 @@ ${tbl(['Date','Sessions'], dailyRows.map(([d,c]) => row(d,c)))}
   res.setHeader('Content-Type', 'text/html');
   res.send(html);
 });
+
+// ── Bills, jars and data (bills.js) ───────────────────────────────────────
+app.use(require('./bills').createBillsRouter({
+  userDir, readJSON, writeJSON, withFileLock, requireSession, requireInternalToken,
+  provider: new ethers.JsonRpcProvider('https://forno.celo.org'),
+  getJarsContract: () => jarsContract,
+  getAutopay: () => gdAutopay,
+  usedTxFile: path.join(HERMES_HOME, 'bills-used-tx.json'),
+}));
 
 // ── Start ──────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

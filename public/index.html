@@ -8,215 +8,221 @@
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <link rel="manifest" href="manifest.json"/>
-<meta name="theme-color" content="#111111"/>
+<meta name="theme-color" content="#f1efe9"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="default"/>
 <meta name="apple-mobile-web-app-title" content="SubBot"/>
 <script src="tailwind.js"></script>
 <script src="tailwind-config.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
 <script src="https://cdn.jsdelivr.net/npm/@web3auth/modal@10.16.0/dist/modal.umd.min.js" defer></script>
 <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js" defer></script>
 <style>
+  /* "Kiosk Print" tokens — see CLAUDE.md. Stored as RGB channels so Tailwind's /opacity modifiers work. */
   :root {
-    --bg-page: #f5f5f5;
-    --bg-app: #ffffff;
-    --bg-header: rgba(255, 255, 255, 0.85);
-    --bg-nav: rgba(255, 255, 255, 0.95);
-    --bg-card: #f9f9f9;
-    --bg-card-hover: #f0f0f0;
-    --bg-input: #f5f5f5;
-    --text-main: #111111;
-    --text-muted: #666666;
-    --border-color: #e5e5e5;
-    --accent: #059669;
-    --accent-glow: rgba(5, 150, 105, 0.12);
-    --scrollbar-thumb: #d1d5db;
+    --bg-page: 228 225 216;
+    --bg-app: 241 239 233;
+    --bg-card: 248 247 243;
+    --bg-card-hover: 234 231 223;
+    --bg-input: 248 247 243;
+    --text-main: 17 17 17;
+    --text-muted: 98 94 87;
+    --border-color: 217 213 204;
+    --accent: 194 61 0;        /* signal orange, text-safe on paper (AA) */
+    --act: 255 79 0;           /* signal orange fill for the one action */
+    --on-accent: 17 17 17;
+    --ok: 31 122 77;
+    --due: 180 35 24;
+    --plate: 241 239 233;
+    --dot: 17 17 17;
   }
   html.dark {
-    --bg-page: #0a0a0a;
-    --bg-app: #111111;
-    --bg-header: rgba(17, 17, 17, 0.88);
-    --bg-nav: rgba(17, 17, 17, 0.96);
-    --bg-card: #1c1c1c;
-    --bg-card-hover: #242424;
-    --bg-input: #1c1c1c;
-    --text-main: #f0f0f0;
-    --text-muted: #888888;
-    --border-color: #2a2a2a;
-    --accent: #34d399;
-    --accent-glow: rgba(52, 211, 153, 0.2);
-    --scrollbar-thumb: #333333;
+    --bg-page: 10 10 9;
+    --bg-app: 22 21 19;
+    --bg-card: 30 29 26;
+    --bg-card-hover: 38 36 33;
+    --bg-input: 30 29 26;
+    --text-main: 239 236 228;
+    --text-muted: 163 157 146;
+    --border-color: 54 52 47;
+    --accent: 255 112 51;
+    --act: 255 90 20;
+    --on-accent: 17 17 17;
+    --ok: 86 196 138;
+    --due: 255 112 96;
+    --plate: 236 233 225;
+    --dot: 239 236 228;
   }
 
   html { color-scheme: light; }
   html.dark { color-scheme: dark; }
-  html, body { margin:0; padding:0; height:100%; background: var(--bg-page); transition: background 0.3s; }
-  body { font-family:'Inter',sans-serif; color: var(--text-main); display:flex; align-items:flex-start; justify-content:center; min-height:100svh; }
-  #app { position:relative; width:100%; height:100svh; max-height:none; overflow:hidden; background: var(--bg-app); border:none; transition: background 0.3s, border-color 0.3s; }
-  .screen { display:none; width:100%; height:100%; flex-direction:column; position:relative; background: var(--bg-app); }
+  html, body { margin:0; padding:0; height:100%; background: rgb(var(--bg-page)); }
+  body { font-family:'Space Grotesk',sans-serif; color: rgb(var(--text-main)); display:flex; align-items:flex-start; justify-content:center; min-height:100dvh; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; }
+  #app { position:relative; width:100%; height:100dvh; overflow:hidden; background: rgb(var(--bg-app)); }
+  .screen { display:none; width:100%; height:100%; flex-direction:column; position:relative; background: rgb(var(--bg-app)); }
   .screen.active { display:flex; }
-  .screen-scroll { overflow-y:auto; flex:1; max-height:calc(100% - 52px - 56px); }
+  .screen-scroll { overflow-y:auto; flex:1; min-height:0; padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; } /* nav floats over the bottom */
   .screen-scroll::-webkit-scrollbar { width:4px; }
-  .screen-scroll::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius:10px; }
-  
-  .glass { background: var(--bg-card); border: 1px solid var(--border-color); backdrop-filter:blur(16px); transition: all 0.2s; }
-  .gold-border { border:1px solid rgba(251,191,36,0.4); }
-  .amber-glow { box-shadow:0 0 25px rgba(251,191,36,0.15); }
-  .pulse-dot { animation:pulse-anim 2s cubic-bezier(0.4,0,0.6,1) infinite; }
-  @keyframes pulse-anim { 0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.2);} }
-  .logo-green { filter: hue-rotate(-45deg) saturate(1.3); }
-  .logo-glow { filter: hue-rotate(-45deg) saturate(1.3) drop-shadow(0 0 18px var(--accent-glow)); }
-  .signature-glow { background:linear-gradient(135deg,#10b981 0%,#059669 100%); color:#ffffff; box-shadow:0 0 25px var(--accent-glow); }
-  html.dark .signature-glow { background:linear-gradient(135deg,#34d399 0%,#10b981 100%); color:#052e16; }
-  
-  #toast { position:absolute; bottom:80px; left:50%; transform:translateX(-50%) translateY(20px); background: var(--bg-card); border:1px solid var(--border-color); color: var(--text-main); padding:8px 16px; border-radius:999px; font-size:12px; font-weight:600; opacity:0; transition:all 0.3s; pointer-events:none; z-index:200; white-space:nowrap; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.2); }
+  .screen-scroll::-webkit-scrollbar-thumb { background: rgb(var(--border-color)); border-radius:10px; }
+  input, select, textarea { font-size:16px !important; } /* below 16px iOS zooms on focus */
+
+  /* Type */
+  .mono-label { font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:500; letter-spacing:.14em; text-transform:uppercase; color: rgb(var(--text-muted)); }
+  .display-num { font-family:'Space Grotesk',sans-serif; font-weight:600; letter-spacing:-.04em; line-height:.9; }
+  .wordmark { font-family:'IBM Plex Mono',monospace; font-weight:600; letter-spacing:.18em; font-size:13px; }
+
+  /* Surfaces: hairlines, not shadows */
+  .glass { background: rgb(var(--bg-card)); border: 1px solid rgb(var(--border-color)); }
+  .rule-t { border-top:1px solid rgb(var(--border-color)); }
+  .dot-grid { background-image: radial-gradient(rgb(var(--dot) / .14) 1px, transparent 1.2px); background-size: 12px 12px; }
+  .plate { background: rgb(var(--plate)); border-radius: 14px; }
+
+  /* The one action */
+  .signature-glow, .btn-act { background: rgb(var(--act)); color: rgb(var(--on-accent)); border-radius: 999px; font-weight:600; }
+  .btn-line { border:1px solid rgb(var(--text-main) / .9); color: rgb(var(--text-main)); border-radius:999px; font-weight:600; background: transparent; }
+  .btn-line:hover { background: rgb(var(--bg-card-hover)); }
+  button, [data-action] { -webkit-tap-highlight-color: transparent; }
+  button:active:not(:disabled), .press:active { transform: scale(.97); transition: transform 120ms ease-out; }
+  .logo-green, .logo-glow { filter:none; }
+
+  /* Budget bar: segmented like a meter readout */
+  .seg-bar { display:grid; grid-template-columns: repeat(20, 1fr); gap:3px; height:14px; }
+  .seg-bar i { display:block; background: rgb(var(--border-color)); border-radius:2px; }
+  .seg-bar i.on { background: rgb(var(--text-main)); }
+  .seg-bar.over i.on { background: rgb(var(--due)); }
+
+  .pref-toggle { background: rgb(var(--border-color)); transition: background 150ms; }
+  .pref-toggle > div { background: rgb(var(--bg-card)); transition: transform 150ms ease-out; }
+  .pref-toggle[data-on="true"] { background: rgb(var(--text-main)); }
+  .pref-toggle[data-on="true"] > div { transform: translateX(20px); }
+  #toast { position:absolute; bottom:84px; left:50%; transform:translateX(-50%) translateY(20px); background: rgb(var(--text-main)); color: rgb(var(--bg-app)); padding:10px 16px; border-radius:999px; font: 500 13px 'IBM Plex Mono',monospace; opacity:0; transition:all 0.25s; pointer-events:none; z-index:200; max-width:calc(100% - 32px); text-align:center; }
   #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
-  .modal-overlay { display:none; position:absolute; inset:0; z-index:100; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); align-items:flex-end; justify-content:center; padding:16px; }
+  .modal-overlay { display:none; position:absolute; inset:0; z-index:100; background:rgb(17 17 17 / .55); align-items:flex-end; justify-content:center; padding:16px; }
   .modal-overlay.active { display:flex; }
-  
-  .nav-tab { display:flex; flex-direction:column; align-items:center; justify-content:center; color: var(--text-muted); cursor:pointer; padding:5px 12px; border-radius:14px; transition:all 0.2s; }
-  .nav-tab.active-tab { color: var(--accent); background: var(--accent-glow); font-weight:700; transform: translateY(-1px); }
-  .nav-tab span.label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-top:3px; }
-  
+  .add-gd { white-space: nowrap; }
+
+  .nav-tab { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; height:100%; color: rgb(var(--text-muted)); cursor:pointer; }
+  .nav-tab .label { font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:500; letter-spacing:.12em; text-transform:uppercase; }
+  .nav-tab.active-tab { color: rgb(var(--text-main)); }
+  .nav-tab.active-tab::before { content:""; position:absolute; top:-1px; left:28%; right:28%; height:3px; background: rgb(var(--act)); border-radius:0 0 3px 3px; }
+
+  /* Laptop: poster beside the phone instead of a phone in a void */
+  #poster { display:none; }
   @media (min-width:480px) {
     body { align-items:center; }
-    #app { width:400px; height:720px; max-height:calc(100vh - 40px); border:1px solid var(--border-color); border-radius:24px; box-shadow:0 25px 50px -12px rgba(0,0,0,0.35); }
+    #app { width:400px; height:780px; max-height:calc(100dvh - 40px); border:1px solid rgb(var(--border-color)); border-radius:28px; }
   }
-  @media all and (display-mode: standalone) {
-    #app-nav { bottom: 4px; }
+  @media (min-width:1000px) {
+    body { gap:72px; }
+    #poster { display:flex; flex-direction:column; justify-content:center; width:460px; }
+    .pay-art { display:none; } /* the poster already shows it */
   }
+  @media all and (display-mode: standalone) { #app-nav { padding-bottom: env(safe-area-inset-bottom); } }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none !important; animation:none !important; } }
 </style>
 </head>
 <body>
+<aside id="poster" aria-hidden="true">
+  <p class="mono-label">SubBot · Celo · G$</p>
+  <h1 class="display-num text-[64px] mt-4 text-main">Every bill,<br/>paid in G$.</h1>
+  <p class="text-muted text-lg mt-5 max-w-[380px] leading-snug">Airtime, data, light and TV from your daily UBI. Plus every subscription you forgot you had.</p>
+  <img src="art/rooftop.webp" alt="" class="mt-8 w-full select-none pointer-events-none"/>
+</aside>
 <div id="app">
 
 <!-- SHARED HEADER -->
-<header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center px-4 border-b border-edge h-[52px] shadow-sm" style="background: var(--bg-header); backdrop-filter: blur(12px);">
-  <div class="flex items-center gap-2 font-bold text-primary">
-    <img src="logo-64.png" alt="SubBot" class="w-6 h-6 logo-green"/>
-    <span class="font-bold text-lg tracking-tight text-main">SubBot</span>
-    <span id="header-status" class="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-panel text-muted font-normal border border-edge">● No data</span>
+<header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center pl-4 pr-1 border-b border-edge h-[52px]" style="background: rgb(var(--bg-app) / .94); backdrop-filter: blur(10px);">
+  <div class="flex items-center gap-3">
+    <span class="wordmark text-main">SUBBOT</span>
+    <span id="header-status" class="mono-label">No data</span>
   </div>
-  <div class="flex items-center gap-1">
-    <button data-action="toggleTheme" class="text-muted hover:text-main hover:bg-panel p-2 rounded-full transition-colors" title="Toggle Theme"><i class="fa-solid fa-circle-half-stroke text-base"></i></button>
-    <button data-action="refreshData" class="text-muted hover:text-main hover:bg-panel p-2 rounded-full transition-colors" title="Refresh"><i class="fa-solid fa-rotate-right text-base"></i></button>
-    <button data-action="nav" data-target="settings" class="text-muted hover:text-main hover:bg-panel p-2 rounded-full transition-colors" title="Settings"><i class="fa-solid fa-gear text-base"></i></button>
+  <div class="flex items-center">
+    <button data-action="toggleTheme" class="w-11 h-11 grid place-items-center text-muted hover:text-main" title="Toggle theme" aria-label="Toggle theme"><i class="fa-solid fa-circle-half-stroke"></i></button>
+    <button data-action="refreshData" class="w-11 h-11 grid place-items-center text-muted hover:text-main" title="Refresh" aria-label="Refresh"><i class="fa-solid fa-rotate-right"></i></button>
+    <button data-action="nav" data-target="settings" class="w-11 h-11 grid place-items-center text-muted hover:text-main" title="Settings" aria-label="Settings"><i class="fa-solid fa-gear"></i></button>
   </div>
 </header>
 
 <!-- SHARED BOTTOM NAV -->
-<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 grid grid-cols-5 items-center px-3 pb-2 pt-1.5 border-t border-edge shadow-lg rounded-t-xl h-[58px]" style="background: var(--bg-nav); backdrop-filter: blur(12px);">
-  <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard">
-    <i class="fa-solid fa-gauge-high text-lg"></i><span class="label">Dash</span>
-  </div>
-  <div class="nav-tab" data-action="nav" data-target="subscriptions" data-tab="subscriptions">
-    <i class="fa-solid fa-credit-card text-lg"></i><span class="label">Subs</span>
-  </div>
-  <div class="nav-tab" data-action="nav" data-target="audit" data-tab="audit">
-    <i class="fa-solid fa-chart-pie text-lg"></i><span class="label">Audit</span>
-  </div>
-  <div class="nav-tab" data-action="nav" data-target="alerts" data-tab="alerts">
-    <i class="fa-solid fa-bell text-lg"></i><span class="label">Alerts</span>
-  </div>
-  <div class="nav-tab" data-action="nav" data-target="credits" data-tab="credits">
-    <i class="fa-solid fa-wallet text-lg"></i><span class="label">Credits</span>
-  </div>
+<nav id="app-nav" class="hidden absolute bottom-0 left-0 w-full z-50 grid grid-cols-5 border-t border-edge h-[64px]" style="background: rgb(var(--bg-app));">
+  <div class="nav-tab" data-action="nav" data-target="dashboard" data-tab="dashboard"><i class="fa-solid fa-house"></i><span class="label">Home</span></div>
+  <div class="nav-tab" data-action="nav" data-target="subscriptions" data-tab="subscriptions"><i class="fa-solid fa-layer-group"></i><span class="label">Subs</span></div>
+  <div class="nav-tab" data-action="nav" data-target="credits" data-tab="credits"><i class="fa-solid fa-bolt"></i><span class="label">Pay</span></div>
+  <div class="nav-tab" data-action="nav" data-target="audit" data-tab="audit"><i class="fa-solid fa-chart-simple"></i><span class="label">Audit</span></div>
+  <div class="nav-tab" data-action="nav" data-target="alerts" data-tab="alerts"><i class="fa-solid fa-bell"></i><span class="label">Alerts</span></div>
 </nav>
 
-<div id="toast"></div>
+<div id="toast" role="status" aria-live="polite"></div>
 
 <!-- SCREEN: WELCOME -->
 <div id="screen-welcome" class="screen active">
-  <div class="absolute -top-24 -right-24 w-64 h-64 bg-cyan-500/10 rounded-full blur-[80px]"></div>
-  <div class="flex-1 flex flex-col items-center justify-between px-8 py-6 z-10 overflow-y-auto">
-    <div class="w-full flex flex-col items-center text-center mt-4">
-      <div class="mb-6">
-        <img src="icon-192.png" alt="SubBot" class="w-24 h-24 rounded-3xl logo-glow shadow-md"/>
-      </div>
-      <h1 class="text-3xl font-extrabold tracking-tight mb-2 text-main">Meet SubBot</h1>
-      <p class="text-muted text-sm px-4 leading-relaxed">Track, audit, and optimize your SaaS &amp; AI spend.</p>
-    </div>
-    <div class="w-full grid grid-cols-1 gap-3 my-4">
-      <div class="glass p-3 rounded-2xl flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-envelope text-lg text-primary"></i></div>
-        <div class="text-left"><span class="text-xs font-bold uppercase tracking-widest text-primary block">Gmail scan</span><span class="text-xs text-muted">Scan Gmail for billing receipts</span></div>
-      </div>
-      <div class="glass p-3 rounded-2xl flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-sky-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-chart-pie text-lg text-sky-500"></i></div>
-        <div class="text-left"><span class="text-xs font-bold uppercase tracking-widest text-sky-500 block">Audit spend</span><span class="text-xs text-muted">Find overlaps &amp; forgotten subs</span></div>
-      </div>
-      <div class="glass p-3 rounded-2xl flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bell text-lg text-emerald-500"></i></div>
-        <div class="text-left"><span class="text-xs font-bold uppercase tracking-widest text-emerald-500 block">Renewal alerts</span><span class="text-xs text-muted">Push notification before trials renew</span></div>
-      </div>
-      <div class="glass p-3 rounded-2xl flex items-center gap-4">
-        <div class="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bolt text-lg text-amber-500"></i></div>
-        <div class="text-left"><span class="text-xs font-bold uppercase tracking-widest text-amber-500 block">Free G$</span><span class="text-xs text-muted">Claim daily G$ UBI · pays for actions</span></div>
-      </div>
-    </div>
-    <div class="w-full">
-      <button data-action="nav" data-target="dashboard" class="signature-glow w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold tracking-wide active:scale-95 transition-transform">
-        Get Started <i class="fa-solid fa-arrow-right text-base"></i>
-      </button>
-      <p class="text-[10px] text-center mt-3 text-muted uppercase tracking-[0.2em] font-semibold">No keys. No custody. Just data.</p>
+  <div class="flex-1 flex flex-col px-6 pt-8 pb-6 overflow-y-auto">
+    <span class="wordmark text-main">SUBBOT</span>
+    <img src="art/rooftop.webp" alt="" class="w-full mt-6 select-none pointer-events-none"/>
+    <h1 class="display-num text-[44px] text-main mt-6">Every bill,<br/>paid in G$.</h1>
+    <ol class="mt-6 space-y-3">
+      <li class="flex gap-3"><span class="font-mono text-xs text-muted pt-1">01</span><span class="text-main">Pay airtime, data, light and TV with your daily G$.</span></li>
+      <li class="flex gap-3 rule-t pt-3"><span class="font-mono text-xs text-muted pt-1">02</span><span class="text-main">Bill jars set G$ aside and pay on the due day.</span></li>
+      <li class="flex gap-3 rule-t pt-3"><span class="font-mono text-xs text-muted pt-1">03</span><span class="text-main">Find the subscriptions you forgot you were paying for.</span></li>
+    </ol>
+    <div class="mt-auto pt-8">
+      <button data-action="nav" data-target="dashboard" class="btn-act w-full py-4 text-base flex items-center justify-center gap-2">Get started <i class="fa-solid fa-arrow-right"></i></button>
+      <p class="mono-label text-center mt-3">No keys to copy. Your G$ stays yours.</p>
     </div>
   </div>
 </div>
 
 <!-- SCREEN: DASHBOARD -->
 <div id="screen-dashboard" class="screen">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <section class="flex flex-col items-center py-2">
-      <div class="relative w-[140px] h-[140px] flex items-center justify-center">
-        <svg class="w-full h-full transform -rotate-90">
-          <circle class="text-edge" cx="70" cy="70" fill="transparent" r="60" stroke="currentColor" stroke-width="8"></circle>
-          <circle id="budget-ring" class="text-primary transition-all duration-700" cx="70" cy="70" fill="transparent" r="60" stroke="currentColor" stroke-dasharray="376.99" stroke-dashoffset="376.99" stroke-linecap="round" stroke-width="8"></circle>
-        </svg>
-        <div class="absolute inset-0 flex flex-col items-center justify-center">
-          <span id="dash-spend" class="text-2xl font-bold font-mono text-main">$0</span>
-          <span id="dash-budget" class="text-xs text-muted font-medium">/ $100</span>
-        </div>
+  <div class="screen-scroll pt-[52px] pb-6">
+    <section class="px-4 pt-6 pb-5">
+      <div class="flex justify-between"><span class="mono-label">Spent this month</span><span id="dash-date" class="mono-label"></span></div>
+      <div class="mt-3 flex items-baseline gap-2 flex-wrap">
+        <span id="dash-spend" class="display-num text-[64px] text-main">$0</span>
+        <span id="dash-budget" class="font-mono text-sm text-muted">/ $100</span>
       </div>
-      <p class="text-sm font-semibold mt-3 text-main">Monthly Spend · <span id="dash-pct" class="text-primary font-bold">0%</span> of budget</p>
+      <div id="budget-bar" class="seg-bar mt-4" role="img" aria-label="Budget used"></div>
+      <p class="mono-label mt-2.5"><span id="dash-pct" class="text-main">0%</span> of monthly budget</p>
     </section>
-    <div class="grid grid-cols-3 gap-3">
-      <div class="bg-panel p-3 rounded-xl border border-edge flex flex-col items-center text-center"><span id="stat-count" class="text-lg font-bold font-mono text-main">0</span><span class="text-[10px] font-bold uppercase tracking-wider text-muted mt-0.5">subs</span></div>
-      <div class="bg-panel p-3 rounded-xl border border-edge flex flex-col items-center text-center"><span id="stat-annual" class="text-lg font-bold font-mono text-sky-500">$0</span><span class="text-[10px] font-bold uppercase tracking-wider text-muted mt-0.5">annual</span></div>
-      <div class="bg-panel p-3 rounded-xl border border-edge flex flex-col items-center text-center"><span id="stat-renewals" class="text-lg font-bold font-mono text-emerald-500">0</span><span class="text-[10px] font-bold uppercase tracking-wider text-muted mt-0.5">renewals</span></div>
+
+    <div class="grid grid-cols-3 border-y border-edge divide-x divide-edge">
+      <div class="px-4 py-3"><p id="stat-count" class="font-mono text-xl font-semibold text-main">0</p><p class="mono-label mt-0.5">Subs</p></div>
+      <div class="px-4 py-3"><p id="stat-annual" class="font-mono text-xl font-semibold text-main">$0</p><p class="mono-label mt-0.5">Per year</p></div>
+      <div class="px-4 py-3"><p id="stat-renewals" class="font-mono text-xl font-semibold text-main">0</p><p class="mono-label mt-0.5">Due 30d</p></div>
     </div>
-    <!-- [GOODDOLLAR_PAUSED_S2] Credits strip hidden during free beta -->
-    <!-- <div id="credits-strip" class="flex items-center justify-between px-4 py-3 bg-panel rounded-xl border border-edge">
-      <div class="flex items-center gap-2"><i class="fa-solid fa-coins text-amber-500 text-lg"></i><span class="text-xs font-bold text-muted uppercase tracking-wider">Credits</span></div>
-      <span id="strip-balance" class="text-sm font-mono font-bold text-main">— G$</span>
-      <button data-action="nav" data-target="credits" class="text-xs font-bold bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-lg active:scale-95 transition-colors">Top Up</button>
-    </div> -->
-    <div id="credits-strip" class="flex items-center justify-between px-4 py-3 bg-emerald-500/10 rounded-xl border border-emerald-500/30">
-      <div class="flex items-center gap-2"><i class="fa-solid fa-rocket text-emerald-500 text-lg"></i><span class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">Free Beta</span></div>
-      <span class="text-xs text-muted font-medium">All features unlocked</span>
-      <span class="text-xs font-bold bg-emerald-500 text-white px-3 py-1 rounded-lg">Active</span>
-    </div>
-    <div class="grid grid-cols-2 gap-3">
-      <button data-action="showGmailModal" class="signature-glow font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md">
-        <i class="fa-solid fa-envelope text-sm"></i><span class="text-xs">Scan Gmail</span>
+
+    <div class="px-4 pt-5 space-y-5">
+      <button data-action="nav" data-target="credits" class="press w-full text-left glass rounded-2xl overflow-hidden block">
+        <img src="art/rooftop.webp" alt="" class="pay-art w-full h-[150px] object-cover object-center select-none pointer-events-none" style="background: rgb(var(--plate));"/>
+        <div class="p-4 flex items-end justify-between gap-3">
+          <div>
+            <p class="font-semibold text-[19px] leading-tight text-main">Pay light, airtime, data and TV with G$</p>
+            <p class="text-sm text-muted mt-1">Straight from your daily UBI.</p>
+          </div>
+          <span class="btn-act shrink-0 px-4 py-2.5 text-sm">Pay a bill</span>
+        </div>
       </button>
-      <button data-action="nav" data-target="audit" class="border border-edge hover:bg-panel text-main font-bold py-3 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all">
-        <i class="fa-solid fa-chart-pie text-sm text-primary"></i><span class="text-xs">View Audit</span>
-      </button>
-    </div>
-    <div id="renewal-prompts"></div>
-    <section class="space-y-2 pb-2">
-      <h3 class="text-xs font-bold uppercase tracking-widest text-muted px-1">Renewing Soon</h3>
-      <div id="renewals-list"><div class="text-xs text-muted text-center py-4 bg-panel rounded-xl border border-edge">No subscriptions tracked yet — tap <strong class="text-primary">+</strong> to add yours.</div></div>
-    </section>
-    <!-- PWA Install Banner -->
-    <div id="pwa-install-banner" class="hidden bg-panel border border-edge rounded-2xl p-4 flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-download text-primary text-lg"></i></div>
-      <div class="flex-1"><p class="text-xs font-bold text-main">Install SubBot</p><p class="text-[10px] text-muted">Add to home screen for quick access</p></div>
-      <div class="flex gap-1.5">
-        <button data-action="pwaInstall" class="px-3 py-1.5 rounded-lg bg-primary text-white text-[10px] font-bold active:scale-95 transition-transform">Install</button>
-        <button data-action="pwaDismiss" class="px-2 py-1.5 rounded-lg text-muted hover:text-main text-[10px]"><i class="fa-solid fa-xmark"></i></button>
+
+      <div id="renewal-prompts"></div>
+
+      <section>
+        <div class="flex justify-between items-baseline"><h3 class="mono-label">Next up</h3><button data-action="nav" data-target="subscriptions" class="mono-label hover:text-main">All subs →</button></div>
+        <div id="renewals-list" class="mt-2"><div class="text-sm text-muted py-4">No subscriptions tracked yet. Add one from Subs.</div></div>
+      </section>
+
+      <div class="grid grid-cols-2 gap-3">
+        <button data-action="showGmailModal" class="btn-line py-3 text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-envelope text-xs"></i>Scan Gmail</button>
+        <button data-action="nav" data-target="audit" class="btn-line py-3 text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-chart-simple text-xs"></i>Run audit</button>
+      </div>
+
+      <!-- PWA Install Banner -->
+      <div id="pwa-install-banner" class="hidden glass rounded-2xl p-4 flex items-center gap-3">
+        <div class="flex-1"><p class="text-sm font-semibold text-main">Install SubBot</p><p class="text-xs text-muted">Add it to your home screen.</p></div>
+        <button data-action="pwaInstall" class="btn-act px-4 py-2 text-xs">Install</button>
+        <button data-action="pwaDismiss" class="w-11 h-11 grid place-items-center text-muted hover:text-main" aria-label="Dismiss"><i class="fa-solid fa-xmark"></i></button>
       </div>
     </div>
   </div>
@@ -224,247 +230,223 @@
 
 <!-- SCREEN: SUBSCRIPTIONS -->
 <div id="screen-subscriptions" class="screen">
-  <div class="screen-scroll pt-[52px] pb-[56px]">
-    <div class="px-4 pt-4 pb-3 space-y-3">
+  <div class="screen-scroll pt-[52px]">
+    <div class="px-4 pt-5 pb-2 space-y-3">
       <div class="relative">
-        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-muted text-sm"></i>
-        <input id="sub-search" type="text" placeholder="Search subscriptions…" class="w-full bg-field border border-edge rounded-xl py-3 pl-10 pr-4 text-sm text-main focus:outline-none focus:border-primary transition-colors"/>
+        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-muted text-sm"></i>
+        <input id="sub-search" type="search" placeholder="Search subscriptions" class="w-full bg-field border border-edge rounded-full py-3 pl-10 pr-4 text-main focus:outline-none focus:border-main"/>
       </div>
       <div id="filter-chips" class="flex gap-2 overflow-x-auto pb-1" style="scrollbar-width:none;">
-        <button data-action="filter" data-filter="all" class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-primary text-white">All</button>
-        <button data-action="filter" data-filter="ai" class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-panel text-muted border border-edge">AI Tools</button>
-        <button data-action="filter" data-filter="saas" class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-panel text-muted border border-edge">SaaS</button>
-        <button data-action="filter" data-filter="entertainment" class="filter-chip px-4 py-1.5 rounded-full text-xs font-bold whitespace-nowrap bg-panel text-muted border border-edge">Entertainment</button>
+        <button data-action="filter" data-filter="all" class="filter-chip px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border">All</button>
+        <button data-action="filter" data-filter="ai" class="filter-chip px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border">AI tools</button>
+        <button data-action="filter" data-filter="saas" class="filter-chip px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border">SaaS</button>
+        <button data-action="filter" data-filter="entertainment" class="filter-chip px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border">Entertainment</button>
+        <button data-action="filter" data-filter="data" class="filter-chip px-3.5 py-2 rounded-full text-sm font-medium whitespace-nowrap border">Data</button>
       </div>
     </div>
-    <div id="subs-list" class="px-4 space-y-2 pb-4"><div class="text-xs text-muted text-center py-8">No subscriptions found.</div></div>
+    <div id="subs-list" class="px-4"><div class="text-sm text-muted py-8">No subscriptions found.</div></div>
   </div>
-  <button data-action="addSub" class="absolute bottom-16 right-4 w-14 h-14 rounded-2xl signature-glow shadow-xl flex items-center justify-center active:scale-90 transition-all z-40"><i class="fa-solid fa-plus text-2xl"></i></button>
+  <button data-action="addSub" class="absolute right-4 bottom-[84px] w-14 h-14 rounded-full btn-act grid place-items-center z-40" aria-label="Add subscription"><i class="fa-solid fa-plus text-xl"></i></button>
 </div>
 
 <!-- SCREEN: AUDIT -->
 <div id="screen-audit" class="screen">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-4">
-    <div class="grid grid-cols-2 gap-3 mt-3">
-      <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Monthly Spend</p><p id="audit-monthly" class="font-mono text-xl font-bold text-main mt-1">$0</p></div>
-      <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Annual Spend</p><p id="audit-annual" class="font-mono text-xl font-bold text-sky-500 mt-1">$0</p></div>
-      <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Overlaps</p><p id="audit-overlaps" class="font-mono text-xl font-bold text-error mt-1">0</p></div>
-      <div class="bg-panel p-3 rounded-xl border border-edge"><p class="text-[10px] text-muted uppercase tracking-wider font-bold">Portfolio Score</p><p id="audit-health" class="font-mono text-xl font-bold text-emerald-500 mt-1">—</p></div>
+  <div class="screen-scroll pt-[52px]">
+    <div class="grid grid-cols-2 border-b border-edge">
+      <div class="px-4 py-4 border-r border-edge"><p class="mono-label">Per month</p><p id="audit-monthly" class="font-mono text-2xl font-semibold text-main mt-1">$0</p></div>
+      <div class="px-4 py-4"><p class="mono-label">Per year</p><p id="audit-annual" class="font-mono text-2xl font-semibold text-main mt-1">$0</p></div>
+      <div class="px-4 py-4 border-r border-t border-edge"><p class="mono-label">Overlaps</p><p id="audit-overlaps" class="font-mono text-2xl font-semibold text-main mt-1">0</p></div>
+      <div class="px-4 py-4 border-t border-edge"><p class="mono-label">Portfolio score</p><p id="audit-health" class="font-mono text-2xl font-semibold text-main mt-1">—</p></div>
     </div>
-    <section><h2 class="text-xs font-bold uppercase tracking-widest text-muted mb-2.5 flex items-center gap-2"><span class="w-1.5 h-3 bg-error rounded-full"></span>Overlaps Detected</h2><div id="overlaps-list" class="text-xs text-muted text-center py-3 bg-panel rounded-xl border border-edge">No overlapping subscriptions detected.</div></section>
-    <section>
-      <h2 class="text-xs font-bold uppercase tracking-widest text-muted mb-2.5 flex items-center gap-2"><span class="w-1.5 h-3 bg-primary rounded-full"></span>Service Health Table</h2>
-      <div class="bg-panel rounded-xl overflow-hidden border border-edge">
-        <div class="flex justify-between px-3.5 py-2.5 border-b border-edge font-bold text-[10px] uppercase text-muted tracking-wider"><span class="text-muted">Service Name</span><span class="text-muted">$/mo · Score</span></div>
-        <div id="health-rows" class="divide-y divide-edge"><p class="text-xs text-muted text-center py-4">No services audited yet.</p></div>
-      </div>
-    </section>
-    <section><h2 class="text-xs font-bold uppercase tracking-widest text-muted mb-2.5 flex items-center gap-2"><span class="w-1.5 h-3 bg-amber-500 rounded-full"></span>Quick Wins 💡</h2><div id="quick-wins"><p class="text-xs text-muted text-center py-3 bg-panel rounded-xl border border-edge">No quick wins found.</p></div></section>
+    <div class="px-4 space-y-7 pt-6">
+      <section><h2 class="mono-label">Overlaps</h2><div id="overlaps-list" class="text-sm text-muted mt-2">No overlapping subscriptions found.</div></section>
+      <section><h2 class="mono-label">Quick wins</h2><div id="quick-wins" class="mt-2"><p class="text-sm text-muted">Nothing to cut right now.</p></div></section>
+      <section>
+        <div class="flex justify-between"><h2 class="mono-label">Every service</h2><span class="mono-label">/mo · score</span></div>
+        <div id="health-rows" class="mt-2"><p class="text-sm text-muted py-3">No services audited yet.</p></div>
+      </section>
+    </div>
   </div>
 </div>
 
 <!-- SCREEN: ALERTS -->
 <div id="screen-alerts" class="screen">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <section class="mt-3">
-      <h2 class="text-xs font-bold uppercase tracking-widest text-muted mb-3 flex items-center gap-2"><span class="w-1.5 h-3 bg-primary rounded-full"></span>Upcoming Timeline</h2>
-      <div id="alerts-timeline" class="space-y-3"><p class="text-xs text-muted text-center py-4 bg-panel rounded-xl border border-edge">No upcoming renewals.</p></div>
-    </section>
-    <section>
-      <div class="bg-panel rounded-2xl p-4 border border-edge">
-        <h2 class="text-xs font-bold text-main mb-3.5">Alert Preferences</h2>
-        <div class="space-y-3.5">
-          <div class="flex items-center justify-between"><span class="text-xs font-medium text-main">Warn 3 days before charge</span><button data-action="togglePref" class="pref-toggle w-11 h-6 bg-primary/20 rounded-full relative p-0.5 flex items-center" data-on="true"><div class="w-5 h-5 bg-primary rounded-full shadow-md ml-auto"></div></button></div>
-          <div class="flex items-center justify-between"><span class="text-xs font-medium text-main">Warn 1 day before charge</span><button data-action="togglePref" class="pref-toggle w-11 h-6 bg-field rounded-full relative p-0.5 flex items-center border border-edge" data-on="false"><div class="w-5 h-5 bg-muted rounded-full shadow-sm"></div></button></div>
-          <div class="flex items-center justify-between"><span class="text-xs font-medium text-main">Alert on budget exceeded</span><button data-action="togglePref" class="pref-toggle w-11 h-6 bg-primary/20 rounded-full relative p-0.5 flex items-center" data-on="true"><div class="w-5 h-5 bg-primary rounded-full shadow-md ml-auto"></div></button></div>
+  <div class="screen-scroll pt-[52px]">
+    <div class="px-4 space-y-7 pt-6">
+      <section><h2 class="mono-label">Coming up</h2><div id="alerts-timeline" class="mt-2"><p class="text-sm text-muted">No upcoming renewals.</p></div></section>
+      <section>
+        <h2 class="mono-label">Warn me</h2>
+        <div class="mt-2 divide-y divide-edge border-y border-edge">
+          <div class="flex items-center justify-between py-3.5"><span class="text-main">3 days before a charge</span><button data-action="togglePref" class="pref-toggle w-12 h-7 rounded-full relative p-0.5 flex items-center" data-on="true" aria-label="Toggle"><div class="w-6 h-6 rounded-full"></div></button></div>
+          <div class="flex items-center justify-between py-3.5"><span class="text-main">1 day before a charge</span><button data-action="togglePref" class="pref-toggle w-12 h-7 rounded-full relative p-0.5 flex items-center" data-on="false" aria-label="Toggle"><div class="w-6 h-6 rounded-full"></div></button></div>
+          <div class="flex items-center justify-between py-3.5"><span class="text-main">When I pass my budget</span><button data-action="togglePref" class="pref-toggle w-12 h-7 rounded-full relative p-0.5 flex items-center" data-on="true" aria-label="Toggle"><div class="w-6 h-6 rounded-full"></div></button></div>
         </div>
-      </div>
-    </section>
-    <section><h2 class="text-xs font-bold uppercase tracking-widest text-muted mb-3 flex items-center gap-2"><span class="w-1.5 h-3 bg-sky-500 rounded-full"></span>Retention &amp; Negotiation</h2><div id="negotiate-list"><p class="text-xs text-muted text-center py-4 bg-panel rounded-xl border border-edge">No eligible subscriptions yet.</p></div></section>
+      </section>
+      <section><h2 class="mono-label">Ask for a better price</h2><div id="negotiate-list" class="mt-2"><p class="text-sm text-muted">No subscriptions to negotiate yet.</p></div></section>
+    </div>
   </div>
 </div>
 
-<!-- SCREEN: CREDITS -->
+<!-- SCREEN: PAY (bills, jars, data) — id kept as "credits" for existing navigation -->
 <div id="screen-credits" class="screen">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <!-- [GOODDOLLAR_PAUSED_S2] Free Beta card — replaces G$ credit card -->
-    <div class="relative w-full rounded-2xl overflow-hidden p-5 flex flex-col justify-between bg-gradient-to-br from-emerald-500/10 to-panel border border-emerald-500/30 mt-3 shadow-xl" style="min-height:120px;">
-      <div class="flex justify-between items-start">
-        <div class="flex items-center gap-2">
-          <div class="w-8 h-8 rounded-full bg-emerald-400/20 flex items-center justify-center">
-            <i class="fa-solid fa-rocket text-emerald-500 text-base"></i>
-          </div>
-          <span class="text-xs font-mono text-emerald-500 uppercase tracking-widest font-bold">Free Beta · All Access</span>
-        </div>
-        <span class="text-[10px] font-bold bg-emerald-500 text-white px-2 py-1 rounded-lg">Active</span>
-      </div>
-      <div class="mt-4">
-        <h1 class="text-2xl font-bold font-mono text-main leading-none">Unlimited</h1>
-        <p class="text-xs text-muted mt-1">All scans, audits, exports &amp; negotiation emails are free during the launch month.</p>
-      </div>
-      <p class="text-[10px] text-muted mt-4">GoodDollar G$ payments return in Season 2 — stay tuned.</p>
-      <!-- Hidden elements kept for JS compatibility -->
-      <span id="gd-wallet-balance" class="hidden">—</span>
-      <span id="credits-balance" class="hidden">0</span>
-      <span id="credits-contract-balance" class="hidden">0</span>
-      <span id="credits-ops-remaining" class="hidden">0</span>
-    </div>
+  <div class="screen-scroll pt-[52px]">
+    <section class="px-4 pt-6 pb-5">
+      <div class="flex justify-between items-baseline"><span class="mono-label">Your G$</span><span id="pay-sandbox" class="hidden mono-label text-primary">Sandbox</span></div>
+      <p class="mt-3"><span id="pay-gd-balance" class="display-num text-[56px] text-main">—</span> <span class="font-mono text-sm text-muted">G$</span></p>
+      <p id="pay-gd-naira" class="font-mono text-sm text-muted mt-1"></p>
+      <div id="pay-connect" class="hidden mt-4"><button data-action="web3authLogin" class="btn-act px-5 py-3 text-sm">Connect wallet to pay</button></div>
+    </section>
 
-    <!-- [GOODDOLLAR_PAUSED_S2] Claim G$ — hidden until Season 2
-    <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-amber-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-muted">Claim G$</h2></div>
-      <div class="rounded-2xl p-4 space-y-3 bg-panel border border-edge">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2"><i class="fa-solid fa-leaf text-emerald-500 text-base"></i><span class="text-xs font-bold uppercase tracking-wider text-emerald-500">GoodDollar UBI</span></div>
-          <span id="gd-claimable" class="text-sm font-mono font-bold text-emerald-500"></span>
-        </div>
-        <div id="gd-status" class="text-xs text-muted">Checking eligibility…</div>
-        <button id="gd-claim-btn" data-action="claimGD" class="hidden w-full py-3 rounded-xl text-xs font-bold uppercase tracking-wider active:scale-95 transition-transform bg-emerald-500 hover:bg-emerald-600 text-white shadow-md flex items-center justify-center gap-2">
-          <i class="fa-solid fa-hand-holding-dollar text-sm"></i> Claim G$
-        </button>
-        <a id="gd-verify-link" href="#" class="hidden text-xs font-bold text-emerald-500 hover:underline inline-flex items-center gap-1">Start Face Verification <i class="fa-solid fa-arrow-right text-[10px]"></i></a>
+    <!-- Daily claim -->
+    <section class="mx-4 glass rounded-2xl p-4 flex items-center gap-3">
+      <img src="art/spots/claim.webp" alt="" class="w-14 h-14 object-contain shrink-0"/>
+      <div class="flex-1 min-w-0">
+        <div class="flex items-baseline gap-2"><p class="font-semibold text-main">Daily G$</p><span id="gd-claimable" class="font-mono text-sm text-ok"></span></div>
+        <div id="gd-status" class="text-sm text-muted">Connect a wallet to claim.</div>
+        <a id="gd-verify-link" href="#" class="hidden mt-1 text-sm font-semibold text-primary underline underline-offset-4">Verify to start claiming</a>
+      </div>
+      <button id="gd-claim-btn" data-action="claimGD" class="hidden btn-act px-4 py-2.5 text-sm shrink-0">Claim</button>
+    </section>
+
+    <section class="px-4 pt-7">
+      <h2 class="mono-label">Pay a bill</h2>
+      <div class="grid grid-cols-2 gap-3 mt-3">
+        <button data-action="openBill" data-cat="airtime" class="press glass rounded-2xl p-3 text-left"><img src="art/spots/phone.webp" alt="" class="w-14 h-14 object-contain"/><p class="font-semibold text-main mt-2">Airtime</p><p class="text-xs text-muted">MTN, Airtel, Glo, 9mobile</p></button>
+        <button data-action="openBill" data-cat="data" class="press glass rounded-2xl p-3 text-left"><img src="art/spots/kiosk.webp" alt="" class="w-14 h-14 object-contain"/><p class="font-semibold text-main mt-2">Data</p><p class="text-xs text-muted">Bundles, all networks</p></button>
+        <button data-action="openBill" data-cat="electricity" class="press glass rounded-2xl p-3 text-left"><img src="art/spots/meter.webp" alt="" class="w-14 h-14 object-contain"/><p class="font-semibold text-main mt-2">Light</p><p class="text-xs text-muted">Prepaid tokens, postpaid</p></button>
+        <button data-action="openBill" data-cat="tv" class="press glass rounded-2xl p-3 text-left"><img src="art/spots/tv.webp" alt="" class="w-14 h-14 object-contain"/><p class="font-semibold text-main mt-2">TV</p><p class="text-xs text-muted">GOtv, DStv, StarTimes</p></button>
       </div>
     </section>
-    -->
-    <!-- Stub elements for JS compatibility -->
-    <span id="gd-claimable" class="hidden"></span>
-    <div id="gd-status" class="hidden"></div>
-    <button id="gd-claim-btn" class="hidden"></button>
-    <a id="gd-verify-link" class="hidden"></a>
 
-    <!-- [GOODDOLLAR_PAUSED_S2] Cost per action — hidden until Season 2
-    <section>
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-primary rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-muted">Cost Per Action</h2></div>
-      <div class="bg-panel rounded-2xl overflow-hidden border border-edge">
-        <div class="flex justify-between px-4 py-2.5 border-b border-edge font-bold text-[10px] uppercase text-muted tracking-wider"><span>Action</span><span>G$</span></div>
-        <div class="divide-y divide-edge">
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs text-main font-medium">Gmail Scan</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs text-main font-medium">AI Audit</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs text-main font-medium">Export CSV</span><span class="text-xs font-mono font-bold text-amber-500">0.05</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs text-main font-medium">Negotiation Email</span><span class="text-xs font-mono font-bold text-amber-500">0.10</span></div>
-          <div class="flex justify-between px-4 py-2.5"><span class="text-xs text-main font-medium">View Dashboard</span><span class="text-xs font-mono font-bold text-emerald-500">Free</span></div>
+    <!-- Data: forecast + cheaper-plan advice (works on every phone) -->
+    <section id="data-card" class="hidden px-4 pt-7">
+      <h2 class="mono-label">Your data</h2>
+      <div class="glass rounded-2xl p-4 mt-3">
+        <div class="flex items-baseline justify-between gap-3">
+          <p class="text-main"><span id="data-days" class="display-num text-[40px]">—</span> <span class="text-sm text-muted">days left</span></p>
+          <button data-action="openDataReading" class="btn-line px-3.5 py-2 text-xs">Update balance</button>
         </div>
+        <p id="data-detail" class="font-mono text-xs text-muted mt-2"></p>
+        <div id="data-advice" class="hidden rule-t mt-4 pt-4"></div>
       </div>
     </section>
-    -->
 
-    <!-- Usage history -->
-    <section class="pb-4">
-      <div class="flex items-center gap-2 mb-3"><span class="w-1 h-3 bg-sky-500 rounded-full"></span><h2 class="text-xs font-bold uppercase tracking-widest text-muted">Usage History</h2></div>
-      <div id="tx-history"><p class="text-xs text-muted text-center py-3 bg-panel rounded-xl border border-edge">No transactions yet.</p></div>
-      <p class="text-[10px] text-muted text-center mt-3 font-semibold">Running on Celo · Fees &lt; $0.001</p>
+    <!-- Bill jars -->
+    <section class="px-4 pt-7">
+      <div class="flex justify-between items-baseline"><h2 class="mono-label">Bill jars</h2><button data-action="openJar" class="mono-label text-primary">+ New jar</button></div>
+      <div id="jars-list" class="mt-3 space-y-3"></div>
     </section>
+
+    <section class="px-4 pt-7 pb-4">
+      <h2 class="mono-label">Receipts</h2>
+      <div id="bills-history" class="mt-2"></div>
+      <p class="mono-label mt-4 text-center">Paid on Celo · fees under $0.001</p>
+    </section>
+
+    <!-- Kept for existing credits code paths -->
+    <span id="gd-wallet-balance" class="hidden">—</span>
+    <span id="credits-balance" class="hidden">0</span>
+    <span id="credits-contract-balance" class="hidden">0</span>
+    <span id="credits-ops-remaining" class="hidden">0</span>
+    <div id="tx-history" class="hidden"></div>
   </div>
 </div>
 
 <!-- SCREEN: SETTINGS -->
 <div id="screen-settings" class="screen">
-  <div class="screen-scroll pt-[52px] pb-[56px] px-4 space-y-5">
-    <section class="space-y-2 mt-3">
-      <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Account Info</h3>
-      <div class="bg-panel border border-edge rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-user text-muted text-base"></i></div>
-        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Your Client UUID</p><p id="settings-uuid" class="text-xs text-muted font-mono truncate mt-0.5">—</p></div>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Web3Auth Wallet</h3>
-      <!-- Logged-out state -->
-      <div id="settings-w3a-logged-out" class="bg-panel border border-edge rounded-xl p-4 text-center">
-        <p class="text-xs text-muted mb-3">Connect a wallet to sync your data on-chain.</p>
-        <button data-action="web3authLogin" class="px-5 py-2.5 rounded-xl signature-glow font-bold text-sm active:scale-95 transition-transform"><i class="fa-solid fa-wallet text-sm mr-1.5"></i> Connect Wallet</button>
-      </div>
-      <!-- Logged-in state -->
-      <div id="settings-w3a-logged-in" class="hidden bg-panel border border-edge rounded-xl p-4 space-y-3">
-        <div class="flex items-center gap-3">
-          <div id="settings-w3a-avatar" class="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-lg flex-shrink-0">?</div>
-          <div class="flex-1 min-w-0">
-            <p id="settings-w3a-name" class="text-sm font-bold text-main truncate">Connected</p>
-            <p id="settings-w3a-email" class="text-[10px] text-muted font-mono truncate">—</p>
+  <div class="screen-scroll pt-[52px]">
+    <div class="px-4 pt-6 space-y-7">
+      <section>
+        <h2 class="mono-label">Wallet</h2>
+        <div id="settings-w3a-logged-out" class="mt-2 border-y border-edge py-4">
+          <p class="text-main">Connect a wallet to claim G$, pay bills and keep your data in sync.</p>
+          <button data-action="web3authLogin" class="btn-act px-5 py-3 mt-3 text-sm">Connect wallet</button>
+        </div>
+        <div id="settings-w3a-logged-in" class="hidden mt-2 border-y border-edge py-4 space-y-3">
+          <div class="flex items-center gap-3">
+            <div id="settings-w3a-avatar" class="w-11 h-11 rounded-full border border-edge grid place-items-center font-mono font-semibold text-main shrink-0">?</div>
+            <div class="flex-1 min-w-0"><p id="settings-w3a-name" class="font-semibold text-main truncate">Connected</p><p id="settings-w3a-email" class="font-mono text-xs text-muted truncate">—</p></div>
+          </div>
+          <p class="font-mono text-xs text-muted truncate">ID <span id="settings-w3a-userid">—</span></p>
+          <button data-action="web3authLogout" class="btn-line px-4 py-2.5 text-sm">Sign out</button>
+        </div>
+        <p class="font-mono text-xs text-muted mt-2 truncate">Device <span id="settings-uuid">—</span></p>
+      </section>
+
+      <section>
+        <h2 class="mono-label">Find subscriptions</h2>
+        <div class="mt-2 divide-y divide-edge border-y border-edge">
+          <div class="py-4 flex items-center gap-3">
+            <img src="art/spots/search.webp" alt="" class="w-12 h-12 object-contain shrink-0"/>
+            <div class="flex-1 min-w-0"><p class="font-medium text-main">Scan Gmail</p><p id="settings-email-display" class="text-sm text-muted truncate">Not set up</p></div>
+            <button data-action="showGmailModal" class="btn-line px-3.5 py-2 text-xs shrink-0">Scan</button>
+          </div>
+          <input id="settings-email" type="email" placeholder="you@gmail.com" class="hidden"/>
+          <div class="py-4 flex items-center gap-3">
+            <img src="art/spots/receipt.webp" alt="" class="w-12 h-12 object-contain shrink-0"/>
+            <div class="flex-1 min-w-0"><p class="font-medium text-main">Import a bank statement</p><p class="text-sm text-muted">Catches charges that never email a receipt.</p></div>
+            <button data-action="showCsvImportModal" class="btn-line px-3.5 py-2 text-xs shrink-0">Upload</button>
           </div>
         </div>
-        <p class="text-[10px] text-muted font-mono truncate">User ID: <span id="settings-w3a-userid">—</span></p>
-        <button data-action="web3authLogout" class="w-full py-2.5 rounded-xl border border-error/30 bg-error/5 hover:bg-error/10 text-error text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95"><i class="fa-solid fa-right-from-bracket text-xs"></i> Sign Out</button>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Gmail IMAP Credentials</h3>
-      <div class="bg-panel border border-edge rounded-xl p-4 space-y-3">
-        <div class="flex items-center gap-3 mb-1">
-          <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-envelope text-muted text-base"></i></div>
-          <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Scan Inbox</p><p id="settings-email-display" class="text-xs text-muted truncate">Not configured</p></div>
+      </section>
+
+      <section>
+        <h2 class="mono-label">Monthly budget</h2>
+        <div class="mt-2 border-y border-edge py-4 flex items-end gap-3">
+          <div class="flex items-baseline gap-1 flex-1">
+            <select id="budget-currency" class="bg-transparent border-none p-0 focus:ring-0 text-main text-2xl font-semibold appearance-none cursor-pointer pr-1"><option value="USD">$</option><option value="EUR">€</option><option value="GBP">£</option><option value="NGN">₦</option><option value="KES">KSh</option><option value="GHS">GH₵</option><option value="ZAR">R</option></select>
+            <input id="budget-input" type="number" class="bg-transparent border-none p-0 focus:ring-0 display-num text-[40px] w-full text-main" value="100"/>
+          </div>
+          <button data-action="saveBudget" class="btn-act px-4 py-2.5 text-sm shrink-0">Save</button>
         </div>
-        <input id="settings-email" type="email" placeholder="you@gmail.com" class="w-full bg-field border border-edge rounded-lg py-2.5 px-3.5 text-xs text-main focus:outline-none focus:border-primary"/>
-        <p class="text-[10px] text-muted"><i class="fa-solid fa-lock text-[8px] mr-1"></i>App password is entered per-scan and never stored.</p>
-        <button data-action="showGmailModal" class="w-full py-2.5 rounded-lg bg-primary text-white text-xs font-bold active:scale-95 flex items-center justify-center gap-2 transition-transform shadow-sm">
-          <i class="fa-solid fa-magnifying-glass text-xs"></i> Run Inbox Scanner
-        </button>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Bank / Card Statement</h3>
-      <div class="bg-panel border border-edge rounded-xl p-4 space-y-3">
-        <div class="flex items-center gap-3 mb-1">
-          <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-file-csv text-muted text-base"></i></div>
-          <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Import Statement</p><p class="text-xs text-muted">Catches subscriptions Gmail never sees a receipt for</p></div>
+      </section>
+
+      <section>
+        <h2 class="mono-label">Notifications</h2>
+        <div class="mt-2 border-y border-edge py-4 flex items-center gap-3">
+          <div class="flex-1"><p class="font-medium text-main">Renewal alerts</p><p class="text-sm text-muted">A phone notification before things renew.</p></div>
+          <button id="push-toggle-btn" data-action="togglePushNotifications" class="btn-line px-3.5 py-2 text-xs">Enable</button>
         </div>
-        <button data-action="showCsvImportModal" class="w-full py-2.5 rounded-lg bg-primary text-white text-xs font-bold active:scale-95 flex items-center justify-center gap-2 transition-transform shadow-sm">
-          <i class="fa-solid fa-upload text-xs"></i> Upload CSV
-        </button>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Push Notifications</h3>
-      <div class="bg-panel border border-edge rounded-xl p-4 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-full bg-field border border-edge flex items-center justify-center flex-shrink-0"><i class="fa-solid fa-bell text-muted text-base"></i></div>
-        <div class="flex-1 min-w-0"><p class="text-sm font-bold text-main">Renewal Alerts</p><p class="text-[10px] text-muted">OS-level alerts before subscriptions renew</p></div>
-        <button id="push-toggle-btn" data-action="togglePushNotifications" class="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold active:scale-95 transition-all">Enable</button>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <h3 class="text-muted font-bold text-xs uppercase tracking-widest pl-1">Monthly Budget Limit</h3>
-      <div class="bg-panel border border-edge rounded-xl p-5 text-center">
-        <div class="inline-flex items-baseline gap-1"><select id="budget-currency" class="bg-transparent border-none p-0 focus:ring-0 text-primary text-2xl font-bold appearance-none cursor-pointer pr-1"><option value="USD">$</option><option value="EUR">€</option><option value="GBP">£</option><option value="NGN">₦</option><option value="KES">KSh</option><option value="GHS">GH₵</option><option value="ZAR">R</option></select><input id="budget-input" type="number" class="bg-transparent border-none p-0 focus:ring-0 text-4xl font-bold w-24 text-main font-mono text-center" value="100"/></div>
-        <p class="text-xs text-muted mt-1.5 font-medium">Push notification when exceeded</p>
-        <button data-action="saveBudget" class="mt-3.5 px-6 py-2 rounded-full bg-primary text-white text-xs font-bold transition-colors hover:opacity-90">Save Budget</button>
-      </div>
-    </section>
-    <section class="space-y-2">
-      <button data-action="exportAction" class="w-full py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-main text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm"><i class="fa-solid fa-download text-sm"></i> Export Portfolio CSV</button>
-      <button data-action="shareApp" class="w-full py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-main text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm"><i class="fa-solid fa-share-nodes text-sm"></i> Share SubBot with a Friend</button>
-    </section>
-    <section class="pt-2 pb-6 text-center">
-      <button data-action="resetBot" class="text-error text-xs font-bold flex items-center justify-center gap-1.5 mx-auto hover:opacity-80 transition-opacity"><i class="fa-solid fa-rotate-left text-xs"></i> Reset SubBot Memory</button>
-    </section>
+      </section>
+
+      <section class="space-y-2">
+        <button data-action="exportAction" class="btn-line w-full py-3 text-sm"><i class="fa-solid fa-download text-xs mr-1.5"></i>Export as CSV</button>
+        <button data-action="shareApp" class="btn-line w-full py-3 text-sm"><i class="fa-solid fa-share-nodes text-xs mr-1.5"></i>Share SubBot</button>
+      </section>
+
+      <section class="pb-4 text-center">
+        <button data-action="resetBot" class="text-due text-sm font-semibold py-2">Reset SubBot on this device</button>
+      </section>
+    </div>
   </div>
 </div>
 
 <!-- MODALS -->
 <div id="modal-negotiate" class="modal-overlay" data-modal="modal-negotiate">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-main text-sm">Retention Draft</h2><button data-action="closeModal" data-modal="modal-negotiate"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center mb-4"><h2 class="font-semibold text-main text-xl">Retention Draft</h2><button data-action="closeModal" data-modal="modal-negotiate"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button></div>
     <div class="space-y-3 mb-4">
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">To</label><input id="neg-to" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main font-mono"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Subject</label><input id="neg-subject" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Message Body</label><textarea id="neg-body" rows="6" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main resize-none"></textarea></div>
+      <div><label class="mono-label">To</label><input id="neg-to" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main font-mono"/></div>
+      <div><label class="mono-label">Subject</label><input id="neg-subject" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"/></div>
+      <div><label class="mono-label">Message Body</label><textarea id="neg-body" rows="6" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main resize-none"></textarea></div>
     </div>
-    <button data-action="copyNeg" class="w-full py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 transition-transform">Copy to Clipboard</button>
+    <button data-action="copyNeg" class="btn-act w-full py-3.5 text-base">Copy to Clipboard</button>
   </div>
 </div>
 
 <div id="modal-add-sub" class="modal-overlay items-center" data-modal="modal-add-sub">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 id="add-sub-title" class="font-bold text-main text-sm">New Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center mb-4"><h2 id="add-sub-title" class="font-semibold text-main text-xl">New Subscription</h2><button data-action="closeModal" data-modal="modal-add-sub"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button></div>
     <div class="space-y-3 mb-4">
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Service Name *</label><input id="add-sub-name" placeholder="e.g. Claude Pro" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Provider</label><input id="add-sub-provider" placeholder="e.g. Anthropic" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
+      <div><label class="mono-label">Service Name *</label><input id="add-sub-name" placeholder="e.g. Claude Pro" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"/></div>
+      <div><label class="mono-label">Provider</label><input id="add-sub-provider" placeholder="e.g. Anthropic" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"/></div>
       <div class="flex gap-2">
-        <div class="flex-1"><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Monthly Cost *</label><input id="add-sub-cost" type="number" min="0" step="0.01" placeholder="20.00" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main font-mono"/></div>
-        <div class="w-20"><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Currency</label><input id="add-sub-currency" placeholder="USD" maxlength="3" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main font-mono"/></div>
+        <div class="flex-1"><label class="mono-label">Monthly Cost *</label><input id="add-sub-cost" type="number" min="0" step="0.01" placeholder="20.00" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main font-mono"/></div>
+        <div class="w-20"><label class="mono-label">Currency</label><input id="add-sub-currency" placeholder="USD" maxlength="3" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main font-mono"/></div>
       </div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Next Renewal</label><input id="add-sub-renewal" type="date" class="w-full max-w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main" style="box-sizing:border-box"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Category</label>
-        <select id="add-sub-category" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main">
+      <div><label class="mono-label">Next Renewal</label><input id="add-sub-renewal" type="date" class="w-full max-w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main" style="box-sizing:border-box"/></div>
+      <div><label class="mono-label">Category</label>
+        <select id="add-sub-category" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main">
           <option value="ai">AI Tool</option>
           <option value="saas">SaaS</option>
           <option value="entertainment">Entertainment</option>
@@ -472,28 +454,28 @@
         </select>
       </div>
     </div>
-    <button id="add-sub-save-btn" data-action="saveManualSub" class="w-full py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 transition-transform">Save Subscription</button>
+    <button id="add-sub-save-btn" data-action="saveManualSub" class="btn-act w-full py-3.5 text-base">Save Subscription</button>
   </div>
 </div>
 
 <!-- MODAL: SUBSCRIPTION DETAIL -->
 <div id="modal-sub-detail" class="modal-overlay items-center" data-modal="modal-sub-detail">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-main text-sm">Subscription Details</h2><button data-action="closeModal" data-modal="modal-sub-detail"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center mb-4"><h2 class="mono-label">Subscription</h2><button data-action="closeModal" data-modal="modal-sub-detail"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button></div>
     <div id="sub-detail-content" class="space-y-3 mb-4"></div>
     <div class="flex gap-2">
-      <button data-action="editSubFromDetail" class="flex-1 py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-main text-sm font-bold flex items-center justify-center gap-2 transition-all"><i class="fa-solid fa-pen text-xs"></i> Edit</button>
-      <button data-action="deleteSubFromDetail" class="flex-1 py-3 rounded-xl border border-error/30 bg-error/5 hover:bg-error/10 text-error text-sm font-bold flex items-center justify-center gap-2 transition-all"><i class="fa-solid fa-trash text-xs"></i> Delete</button>
+      <button data-action="editSubFromDetail" class="flex-1 py-3 text-sm font-semibold text-main">Edit</button>
+      <button data-action="deleteSubFromDetail" class="flex-1 py-3 text-sm font-semibold text-due">Delete</button>
     </div>
   </div>
 </div>
 
 <div id="modal-gmail-scan" class="modal-overlay items-center" data-modal="modal-gmail-scan">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-main text-sm">Run IMAP Scan</h2><button data-action="closeModal" data-modal="modal-gmail-scan"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center mb-4"><h2 class="font-semibold text-main text-xl">Run IMAP Scan</h2><button data-action="closeModal" data-modal="modal-gmail-scan"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button></div>
     <div class="space-y-3 mb-4">
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">Gmail Address</label><input id="gmail-scan-email" type="email" placeholder="you@gmail.com" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs mt-1 text-main"/></div>
-      <div><label class="text-[10px] uppercase tracking-widest text-muted font-bold">App Password</label><input id="gmail-scan-password" type="password" placeholder="xxxx xxxx xxxx xxxx" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs font-mono mt-1 text-main"/></div>
+      <div><label class="mono-label">Gmail Address</label><input id="gmail-scan-email" type="email" placeholder="you@gmail.com" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"/></div>
+      <div><label class="mono-label">App Password</label><input id="gmail-scan-password" type="password" placeholder="xxxx xxxx xxxx xxxx" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs font-mono mt-1 text-main"/></div>
       <div class="bg-field border border-edge rounded-lg p-3 space-y-1.5">
         <p class="text-[10px] font-bold text-muted uppercase tracking-wider"><i class="fa-solid fa-circle-info text-muted mr-1"></i>How to get an App Password</p>
         <ol class="text-[10px] text-muted space-y-1 pl-3 list-decimal">
@@ -506,7 +488,7 @@
         <p class="text-[10px] text-muted"><i class="fa-solid fa-lock text-[8px] mr-1"></i>Your password is sent directly to Gmail's IMAP server and never stored.</p>
       </div>
     </div>
-    <button data-action="runGmailScan" class="w-full py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 flex items-center justify-center gap-2 transition-transform">
+    <button data-action="runGmailScan" class="btn-act w-full py-3.5 text-base flex items-center justify-center gap-2">
       <i class="fa-solid fa-magnifying-glass text-sm"></i> Start Scan
     </button>
   </div>
@@ -514,10 +496,10 @@
 
 <!-- MODAL: SCAN RESULTS CONFIRMATION -->
 <div id="modal-scan-confirm" class="modal-overlay items-center" data-modal="modal-scan-confirm">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
     <div class="flex justify-between items-center mb-3">
-      <h2 class="font-bold text-main text-sm">Subscriptions Found</h2>
-      <button data-action="closeModal" data-modal="modal-scan-confirm"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button>
+      <h2 class="font-semibold text-main text-xl">Subscriptions Found</h2>
+      <button data-action="closeModal" data-modal="modal-scan-confirm"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button>
     </div>
     <p class="text-[10px] text-muted mb-3">Select the subscriptions you want to track:</p>
     <div class="flex gap-2 mb-3">
@@ -531,15 +513,15 @@
     </button>
     <div class="flex gap-2 mt-3">
       <button data-action="closeModal" data-modal="modal-scan-confirm" class="flex-1 py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-muted text-sm font-bold transition-all">Cancel</button>
-      <button data-action="confirmScanSubs" class="flex-1 py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 transition-transform">Add Selected</button>
+      <button data-action="confirmScanSubs" class="btn-act flex-1 py-3.5 text-base">Add Selected</button>
     </div>
   </div>
 </div>
 
 <!-- MODAL: BANK/CARD STATEMENT IMPORT -->
 <div id="modal-csv-import" class="modal-overlay items-center" data-modal="modal-csv-import">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 class="font-bold text-main text-sm">Import Bank Statement</h2><button data-action="closeModal" data-modal="modal-csv-import"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main"></i></button></div>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center mb-4"><h2 class="font-semibold text-main text-xl">Import Bank Statement</h2><button data-action="closeModal" data-modal="modal-csv-import"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button></div>
     <div class="space-y-3 mb-4">
       <p class="text-[10px] text-muted">Export a CSV statement from your bank or card and upload it here. SubBot looks for charges that repeat monthly or yearly at the same merchant — catching subscriptions that never send a receipt email.</p>
       <div class="bg-field border border-edge rounded-xl p-4 text-center">
@@ -551,14 +533,14 @@
       </div>
       <p class="text-[10px] text-muted"><i class="fa-solid fa-lock text-[8px] mr-1"></i>The file is read in your browser and sent once for analysis — it isn't stored.</p>
     </div>
-    <button data-action="runStatementImport" class="w-full py-3 rounded-xl signature-glow font-bold text-sm shadow-md active:scale-95 flex items-center justify-center gap-2 transition-transform">
+    <button data-action="runStatementImport" class="btn-act w-full py-3.5 text-base flex items-center justify-center gap-2">
       <i class="fa-solid fa-upload text-sm"></i> Import Statement
     </button>
   </div>
 </div>
 
 <div id="modal-welcome" class="modal-overlay items-center" data-modal="modal-welcome">
-  <div class="w-full max-w-[360px] rounded-2xl border border-edge shadow-2xl p-5" style="background:var(--bg-app)" data-modal-content>
+  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
     <div class="text-center mb-5">
       <img src="logo-64.png" alt="SubBot" class="w-14 h-14 mx-auto mb-3 rounded-xl">
       <h2 class="font-bold text-main text-lg">Welcome to SubBot</h2>
@@ -603,7 +585,88 @@
   </div>
 </div>
 
+<!-- MODAL: PAY A BILL -->
+<div id="modal-bill" class="modal-overlay" data-modal="modal-bill">
+  <div class="w-full max-w-[400px] max-h-[92%] overflow-y-auto rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center"><h2 id="bill-title" class="font-semibold text-xl text-main">Pay a bill</h2><button data-action="closeModal" data-modal="modal-bill" class="w-11 h-11 -mr-2 grid place-items-center text-muted" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+    <div class="space-y-4 mt-3">
+      <div><p class="mono-label mb-2">Provider</p><div id="bill-providers" class="flex flex-wrap gap-2"></div></div>
+      <div id="bill-metertype-wrap" class="hidden"><p class="mono-label mb-2">Meter type</p><div id="bill-metertype" class="flex gap-2"></div></div>
+      <div><label id="bill-number-label" for="bill-number" class="mono-label">Phone number</label><input id="bill-number" inputmode="numeric" autocomplete="tel" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 font-mono text-main focus:outline-none focus:border-main"/><p id="bill-customer" class="text-sm mt-1.5 hidden"></p></div>
+      <div id="bill-plan-wrap" class="hidden"><label for="bill-plan" class="mono-label">Plan</label><select id="bill-plan" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"></select></div>
+      <div id="bill-amount-wrap"><label for="bill-amount" class="mono-label">Amount (₦)</label><input id="bill-amount" type="number" inputmode="numeric" min="50" step="50" placeholder="1000" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 font-mono text-main focus:outline-none focus:border-main"/>
+        <div id="bill-presets" class="flex gap-2 mt-2"></div></div>
+      <div id="bill-source-wrap" class="hidden"><label for="bill-source" class="mono-label">Pay from</label><select id="bill-source" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"></select></div>
+      <div id="bill-quote" class="hidden border-y border-edge py-3 font-mono text-sm space-y-1"></div>
+      <p id="bill-error" class="hidden text-sm text-due"></p>
+    </div>
+    <button id="bill-go" data-action="billGo" class="btn-act w-full py-3.5 mt-5 text-base">Get price</button>
+  </div>
+</div>
+
+<!-- MODAL: BILL RECEIPT -->
+<div id="modal-bill-done" class="modal-overlay items-center" data-modal="modal-bill-done">
+  <div class="w-full max-w-[380px] rounded-3xl border border-edge p-6 text-center" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="plate inline-block p-2"><img id="bill-done-art" src="art/spots/receipt.webp" alt="" class="w-28 h-28 object-contain"/></div>
+    <h2 id="bill-done-title" class="font-semibold text-xl text-main mt-3">Paid</h2>
+    <p id="bill-done-sub" class="text-sm text-muted mt-1"></p>
+    <div id="bill-done-token" class="hidden mt-4 border border-edge rounded-xl p-3"><p class="mono-label">Token</p><p id="bill-done-token-val" class="font-mono text-lg text-main mt-1 break-all"></p><button data-action="copyToken" class="mono-label text-primary mt-2">Copy</button></div>
+    <button data-action="closeModal" data-modal="modal-bill-done" class="btn-line w-full py-3 mt-5">Done</button>
+  </div>
+</div>
+
+<!-- MODAL: JAR -->
+<div id="modal-jar" class="modal-overlay" data-modal="modal-jar">
+  <div class="w-full max-w-[400px] max-h-[92%] overflow-y-auto rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <div class="flex justify-between items-center"><h2 id="jar-title" class="font-semibold text-xl text-main">New bill jar</h2><button data-action="closeModal" data-modal="modal-jar" class="w-11 h-11 -mr-2 grid place-items-center text-muted" aria-label="Close"><i class="fa-solid fa-xmark text-lg"></i></button></div>
+    <p id="jar-intro" class="text-sm text-muted mt-1">Set G$ aside for one bill. It stays in your wallet until the bill is due.</p>
+    <div class="space-y-4 mt-4">
+      <div><label for="jar-label" class="mono-label">Name</label><input id="jar-label" maxlength="40" placeholder="GOtv at home" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main focus:outline-none focus:border-main"/></div>
+      <div><label for="jar-service" class="mono-label">Bill</label><select id="jar-service" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"></select></div>
+      <div><label for="jar-number" id="jar-number-label" class="mono-label">Number</label><input id="jar-number" inputmode="numeric" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 font-mono text-main focus:outline-none focus:border-main"/></div>
+      <div id="jar-plan-wrap" class="hidden"><label for="jar-plan" class="mono-label">Plan</label><select id="jar-plan" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"></select></div>
+      <div id="jar-amount-wrap"><label for="jar-amount" class="mono-label">Amount (₦)</label><input id="jar-amount" type="number" inputmode="numeric" min="50" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 font-mono text-main focus:outline-none focus:border-main"/></div>
+      <label id="jar-auto-wrap" class="hidden flex items-center justify-between gap-3"><span><span class="font-medium text-main block">Top up when data runs low</span><span class="text-xs text-muted">Instead of a fixed date</span></span><input id="jar-auto" type="checkbox" class="w-6 h-6 accent-[rgb(var(--act))]"/></label>
+      <div id="jar-due-wrap"><label for="jar-due" class="mono-label">Due on day</label><input id="jar-due" type="number" min="1" max="28" placeholder="14" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 font-mono text-main focus:outline-none focus:border-main"/></div>
+      <label id="jar-autopay-wrap" class="hidden flex items-center justify-between gap-3"><span><span class="font-medium text-main block">Autopay</span><span class="text-xs text-muted">Pay this bill from your wallet on the due day</span></span><input id="jar-autopay" type="checkbox" class="w-6 h-6 accent-[rgb(var(--act))]"/></label>
+      <div id="jar-split-wrap"><label for="jar-split" class="mono-label">Share of each daily claim: <span id="jar-split-val" class="text-main">0%</span></label><input id="jar-split" type="range" min="0" max="100" step="5" value="50" class="w-full mt-2 accent-[rgb(var(--act))]"/></div>
+      <p id="jar-error" class="hidden text-sm text-due"></p>
+    </div>
+    <button data-action="saveJar" class="btn-act w-full py-3.5 mt-5 text-base">Save jar</button>
+    <button id="jar-delete" data-action="deleteJar" class="hidden w-full py-3 mt-2 text-sm text-due font-semibold">Delete jar</button>
+  </div>
+</div>
+
+<!-- MODAL: FUND JAR -->
+<div id="modal-jar-fund" class="modal-overlay items-center" data-modal="modal-jar-fund">
+  <div class="w-full max-w-[380px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <h2 id="jar-fund-title" class="font-semibold text-xl text-main">Add G$</h2>
+    <label for="jar-fund-amount" class="mono-label block mt-4">Amount (G$)</label>
+    <input id="jar-fund-amount" type="number" inputmode="decimal" min="1" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 font-mono text-main focus:outline-none focus:border-main"/>
+    <p class="text-xs text-muted mt-2">You can take G$ back out of a jar at any time.</p>
+    <div class="grid grid-cols-2 gap-2 mt-5">
+      <button data-action="withdrawJar" class="btn-line py-3 text-sm">Take out</button>
+      <button data-action="fundJar" class="btn-act py-3 text-sm">Add to jar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: DATA BALANCE -->
+<div id="modal-data-reading" class="modal-overlay items-center" data-modal="modal-data-reading">
+  <div class="w-full max-w-[380px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
+    <h2 class="font-semibold text-xl text-main">How much data is left?</h2>
+    <p class="text-sm text-muted mt-1">Dial <span id="data-ussd" class="font-mono text-main">*323#</span> on your phone and enter what it shows.</p>
+    <div class="flex gap-2 mt-4">
+      <input id="data-reading" type="number" inputmode="decimal" min="0" step="0.1" placeholder="1.2" class="flex-1 bg-field border border-edge rounded-xl py-3 px-3.5 font-mono text-main focus:outline-none focus:border-main"/>
+      <select id="data-reading-unit" class="bg-field border border-edge rounded-xl px-3 text-main"><option value="GB">GB</option><option value="MB">MB</option></select>
+    </div>
+    <button data-action="saveDataReading" class="btn-act w-full py-3.5 mt-5">Save</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
 <script src="popup.js"></script>
+<script src="pay.js"></script>
 </div><!-- #app -->
 </body>
 </html>
