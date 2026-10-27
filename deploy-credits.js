@@ -29,7 +29,12 @@ async function main() {
 
   console.log(`\nDeploying SubBotCredits...`);
   const factory  = new ethers.ContractFactory(abi, bytecode, wallet);
-  const contract = await factory.deploy(wallet.address); // agent = deployer
+  // ethers reserves 2x the base fee; Celo's base fee is flat, so 1.3x is plenty and needs far less CELO up front
+  const { baseFeePerGas } = await provider.getBlock('latest');
+  const maxPriorityFeePerGas = ethers.parseUnits('2.5', 'gwei');
+  const maxFeePerGas = baseFeePerGas * 13n / 10n + maxPriorityFeePerGas;
+  console.log(`Max fee:  ${ethers.formatUnits(maxFeePerGas, 'gwei')} gwei`);
+  const contract = await factory.deploy(wallet.address, { maxFeePerGas, maxPriorityFeePerGas }); // agent = deployer
   console.log(`  Tx: ${contract.deploymentTransaction().hash}`);
   await contract.waitForDeployment();
   const address = await contract.getAddress();

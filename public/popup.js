@@ -140,7 +140,7 @@ const SEL_CURRENT_DAY   = '0x5c9302c9'; // currentDay()→uint256
 const SEL_CAN_TOP       = '0xe97eefd2'; // canTop(address)→bool
 const SEL_TOP_WALLET    = '0x3771dcf8'; // topWallet(address)
 
-const CREDITS_CONTRACT = '0xdF61E8D2a22e456a87998Ab78d00E57d099660e8'; // SubBotCredits on Celo mainnet
+const CREDITS_CONTRACT = '0xBEDc4b01E6Af231E5e52eCCAEd75b1C2b34796ce'; // SubBotCredits v2 on Celo mainnet
 const ACTION_COSTS = { scan: 0.10, audit: 0.05, negotiate: 0.10, export: 0.05 };
 const SEL_APPROVE     = '0x095ea7b3'; // approve(address,uint256)
 

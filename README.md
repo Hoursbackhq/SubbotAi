@@ -172,7 +172,7 @@ OPENAI_API_KEY=your_nous_key
 OPENAI_BASE_URL=https://inference-api.nousresearch.com/v1
 AGENT_PRIVATE_KEY=0x...
 LOG_CONTRACT_ADDRESS=0x5bc06976e5b46fd624195EFdD0bFC45a73569003
-CREDITS_CONTRACT_ADDRESS=0xdF61E8D2a22e456a87998Ab78d00E57d099660e8
+CREDITS_CONTRACT_ADDRESS=0xBEDc4b01E6Af231E5e52eCCAEd75b1C2b34796ce
 SESSION_SECRET=          # any long random string — signs user session tokens
 INTERNAL_SERVICE_TOKEN=  # any long random string — shared secret for the cron scripts
 

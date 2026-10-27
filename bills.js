@@ -672,6 +672,8 @@ function createBillsRouter(deps) {
   router.post('/jars/run-due', requireInternalToken, async (req, res) => {
     const mode = jarMode();
     if (mode === 'allowance' && (!getAutopay() || !treasury)) return res.json({ ok: true, results: [], note: 'autopay not configured' });
+    // Pulling G$ before VTpass can deliver would take money for a bill that never gets paid
+    if (!vtpass.configured && !skipChain) return res.json({ ok: true, results: [], note: 'bill payments not configured' });
     const results = [];
     const root = path.dirname(userDir('probe'));
     const lagos = new Date(now().getTime() + 3600000);
