@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subbot-v14';
+const CACHE_NAME = 'subbot-v15';
 const SHELL_ASSETS = [
   '/',
   '/app',
@@ -63,6 +63,17 @@ self.addEventListener('fetch', e => {
       url.pathname.startsWith('/log-decision') ||
       url.pathname.startsWith('/charge-mode') ||
       url.pathname.startsWith('/push')) {
+    return;
+  }
+
+  // Pages: network first so a deploy shows up on the next load; cache only when offline
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).then(resp => {
+        if (resp.ok) caches.open(CACHE_NAME).then(cache => cache.put(e.request, resp.clone()));
+        return resp;
+      }).catch(() => caches.match(e.request))
+    );
     return;
   }
 

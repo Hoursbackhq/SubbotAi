@@ -14,10 +14,8 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 <link rel="manifest" href="manifest.json"/>
 <script>
-  // Returning users go straight to the app. /?home keeps them here.
-  try {
-    if (!location.search.includes('home') && (localStorage.getItem('subbot') || localStorage.getItem('subbot_onboarded') || matchMedia('(display-mode: standalone)').matches)) location.replace('/app');
-  } catch (e) {}
+  // Phones that installed SubBot before the app moved to /app still open /. Send them on.
+  try { if (matchMedia('(display-mode: standalone)').matches) location.replace('/app'); } catch (e) {}
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
@@ -122,7 +120,7 @@
 
 <header class="rule-b">
   <div class="wrap">
-    <a class="brand" href="/?home" aria-label="SubBot home">
+    <a class="brand" href="/" aria-label="SubBot home">
       <svg aria-hidden="true" viewBox="130 48 252 388"><rect x="247" y="96" width="18" height="64" rx="9" fill="currentColor"/><circle cx="256" cy="84" r="30" fill="#ff4f00"/><path d="M146,178 Q146,150 174,150 L338,150 Q366,150 366,178 L366,396 L344.0,426 L322.0,396 L300.0,426 L278.0,396 L256.0,426 L234.0,396 L212.0,426 L190.0,396 L168.0,426 L146.0,396 Z" fill="currentColor"/><rect class="eye" x="194" y="204" width="40" height="52" rx="10"/><rect class="eye" x="278" y="204" width="40" height="52" rx="10"/><rect class="eye" x="194" y="296" width="124" height="18" rx="9"/><rect class="eye" x="194" y="336" width="78" height="18" rx="9"/></svg>
       <span class="wordmark">SUBBOT</span>
     </a>
