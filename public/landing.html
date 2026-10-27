@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SubBot · Pay your bills with G$</title>
+<meta name="description" content="SubBot tracks your subscriptions and pays airtime, data, electricity and TV from your GoodDollar wallet. Set money aside in jars and bills pay themselves on the due day."/>
+<meta property="og:title" content="SubBot · Pay your bills with G$"/>
+<meta property="og:description" content="Track subscriptions. Pay airtime, data, electricity and TV with G$. Bills that pay themselves."/>
+<meta property="og:image" content="https://subbotai.xyz/icon-512.png"/>
+<meta name="theme-color" content="#f1efe9"/>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+<link rel="manifest" href="manifest.json"/>
+<script>
+  // Returning users go straight to the app. /?home keeps them here.
+  try {
+    if (!location.search.includes('home') && (localStorage.getItem('subbot') || localStorage.getItem('subbot_onboarded') || matchMedia('(display-mode: standalone)').matches)) location.replace('/app');
+  } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  /* "Kiosk Print" tokens, same values as the app (see CLAUDE.md) */
+  :root {
+    --page: #f1efe9; --card: #f8f7f3; --ink: #111111; --muted: #625e57; --rule: #d9d5cc;
+    --act: #ff4f00; --accent: #c23d00; --ok: #1f7a4d; --plate: #f1efe9; --dot: 17 17 17;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --page: #161513; --card: #1e1d1a; --ink: #efece4; --muted: #a39d92; --rule: #36342f; --act: #ff5a14; --accent: #ff7033; --ok: #56c48a; --plate: #ece9e1; --dot: 239 236 228; }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--page); color: var(--ink); font-family: 'Space Grotesk', system-ui, sans-serif; -webkit-font-smoothing: antialiased; font-variant-numeric: tabular-nums; line-height: 1.5; }
+  a { color: inherit; }
+  img { max-width: 100%; display: block; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+  .mono { font-family: 'IBM Plex Mono', monospace; }
+  .label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+  .wordmark { font-family: 'IBM Plex Mono', monospace; font-weight: 600; letter-spacing: .18em; font-size: 13px; }
+  .dot-grid { background-image: radial-gradient(rgb(var(--dot) / .14) 1px, transparent 1.2px); background-size: 12px 12px; }
+  .rule-b { border-bottom: 1px solid var(--rule); }
+  .rule-t { border-top: 1px solid var(--rule); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; border-radius: 999px; padding: 14px 22px; font-weight: 600; font-size: 16px; text-decoration: none; transition: transform 120ms ease-out; border: 1px solid transparent; }
+  .btn:active { transform: scale(.97); }
+  .btn-act { background: var(--act); color: #111111; }
+  .btn-line { border-color: var(--ink); color: var(--ink); }
+  .btn-sm { padding: 9px 16px; font-size: 14px; }
+  @media (prefers-reduced-motion: reduce) { .btn { transition: none; } .btn:active { transform: none; } }
+
+  header { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--page) 94%, transparent); backdrop-filter: blur(10px); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 60px; }
+  .brand { display: flex; align-items: center; gap: 8px; text-decoration: none; }
+  .brand svg { height: 26px; width: auto; }
+  .brand .eye { fill: var(--page); }
+
+  .hero { padding: 48px 0 56px; }
+  .hero .wrap { display: grid; gap: 32px; align-items: center; }
+  @media (min-width: 860px) { .hero .wrap { grid-template-columns: 1.05fr 1fr; gap: 48px; } .hero { padding: 80px 0; } }
+  h1 { font-weight: 600; letter-spacing: -.04em; line-height: .95; font-size: clamp(44px, 9vw, 84px); margin: 14px 0 0; }
+  h1 span { color: var(--accent); }
+  .lede { font-size: 18px; color: var(--muted); max-width: 34em; margin: 20px 0 28px; }
+  .ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+  .art-plate { border-radius: 16px; }
+  @media (prefers-color-scheme: dark) { .art-plate { background: var(--plate); padding: 12px; } }
+
+  section { padding: 64px 0; }
+  h2 { font-weight: 600; letter-spacing: -.03em; line-height: 1; font-size: clamp(32px, 5vw, 48px); margin: 12px 0 0; }
+  .sub { color: var(--muted); font-size: 17px; max-width: 36em; margin: 14px 0 0; }
+
+  .bills { display: grid; grid-template-columns: repeat(2, 1fr); border-top: 1px solid var(--rule); border-left: 1px solid var(--rule); margin-top: 36px; }
+  @media (min-width: 760px) { .bills { grid-template-columns: repeat(4, 1fr); } }
+  .bill { border-right: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: 20px; }
+  .bill img { width: 88px; height: 88px; object-fit: contain; }
+  .bill h3 { font-size: 18px; font-weight: 600; margin: 14px 0 2px; }
+  .bill p { margin: 0; font-size: 14px; color: var(--muted); }
+
+  .steps { display: grid; gap: 16px; margin-top: 36px; }
+  @media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); } }
+  .step { background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 22px; }
+  .step .n { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 13px; color: var(--accent); }
+  .step img { width: 110px; height: 110px; object-fit: contain; margin: 10px 0 6px; }
+  .step h3 { font-size: 20px; font-weight: 600; margin: 4px 0 6px; letter-spacing: -.01em; }
+  .step p { margin: 0; color: var(--muted); font-size: 15px; }
+  @media (prefers-color-scheme: dark) { .spot { background: var(--plate); border-radius: 12px; padding: 6px; } }
+
+  .split { display: grid; gap: 32px; align-items: start; }
+  @media (min-width: 860px) { .split { grid-template-columns: 1fr 1fr; gap: 56px; } }
+  .list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+  .list li { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid var(--rule); }
+  .list .k { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); min-width: 28px; padding-top: 3px; }
+  .list b { display: block; font-weight: 600; font-size: 17px; }
+  .list span { color: var(--muted); font-size: 15px; }
+  .soon { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; border: 1px solid var(--rule); border-radius: 999px; padding: 2px 8px; margin-left: 6px; color: var(--muted); vertical-align: 2px; }
+
+  .ticket { background: var(--card); border: 1px solid var(--rule); border-radius: 16px; padding: 22px; font-family: 'IBM Plex Mono', monospace; font-size: 14px; }
+  .ticket .row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px dashed var(--rule); }
+  .ticket .row:last-child { border-bottom: 0; }
+  .ticket .ok { color: var(--ok); font-weight: 600; }
+  .ticket .amt { font-weight: 600; }
+
+  .trust { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; margin-top: 36px; }
+  @media (min-width: 760px) { .trust { grid-template-columns: repeat(3, 1fr); } }
+  .trust div { background: var(--page); padding: 22px; }
+  .trust b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .trust p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  .cta-band { text-align: center; padding: 72px 0; }
+  .cta-band h2 { margin: 0 auto; max-width: 14em; }
+  .cta-band .ctas { justify-content: center; margin-top: 28px; }
+
+  footer { padding: 28px 0 40px; font-size: 14px; color: var(--muted); }
+  footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: center; }
+  footer a { text-decoration: none; }
+  footer a:hover { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<header class="rule-b">
+  <div class="wrap">
+    <a class="brand" href="/?home" aria-label="SubBot home">
+      <svg aria-hidden="true" viewBox="130 48 252 388"><rect x="247" y="96" width="18" height="64" rx="9" fill="currentColor"/><circle cx="256" cy="84" r="30" fill="#ff4f00"/><path d="M146,178 Q146,150 174,150 L338,150 Q366,150 366,178 L366,396 L344.0,426 L322.0,396 L300.0,426 L278.0,396 L256.0,426 L234.0,396 L212.0,426 L190.0,396 L168.0,426 L146.0,396 Z" fill="currentColor"/><rect class="eye" x="194" y="204" width="40" height="52" rx="10"/><rect class="eye" x="278" y="204" width="40" height="52" rx="10"/><rect class="eye" x="194" y="296" width="124" height="18" rx="9"/><rect class="eye" x="194" y="336" width="78" height="18" rx="9"/></svg>
+      <span class="wordmark">SUBBOT</span>
+    </a>
+    <a class="btn btn-act btn-sm" href="/app">Open app</a>
+  </div>
+</header>
+
+<main>
+  <div class="hero dot-grid rule-b">
+    <div class="wrap">
+      <div>
+        <p class="label">For GoodDollar users in Nigeria</p>
+        <h1>Every bill,<br/>paid in <span>G$</span>.</h1>
+        <p class="lede">SubBot keeps track of your subscriptions and pays airtime, data, electricity and TV straight from your GoodDollar wallet. Set money aside in jars and your bills pay themselves on the due day.</p>
+        <div class="ctas">
+          <a class="btn btn-act" href="/app">Open SubBot</a>
+          <a class="btn btn-line" href="#how">How it works</a>
+        </div>
+      </div>
+      <img class="art-plate" src="art/rooftop.webp" alt="A Lagos rooftop with a satellite dish, a prepaid meter and a phone"/>
+    </div>
+  </div>
+
+  <section>
+    <div class="wrap">
+      <p class="label">Pay with G$</p>
+      <h2>The bills you already pay.</h2>
+      <p class="sub">Quotes are in naira and G$ before you pay. Tokens and receipts land in the app the moment the payment clears.</p>
+      <div class="bills">
+        <div class="bill"><img class="spot" src="art/spots/phone.webp" alt=""/><h3>Airtime</h3><p>MTN, Airtel, Glo, 9mobile</p></div>
+        <div class="bill"><img class="spot" src="art/spots/kiosk.webp" alt=""/><h3>Data</h3><p>Daily, weekly and monthly bundles</p></div>
+        <div class="bill"><img class="spot" src="art/spots/meter.webp" alt=""/><h3>Electricity</h3><p>Prepaid tokens for 12 DisCos</p></div>
+        <div class="bill"><img class="spot" src="art/spots/tv.webp" alt=""/><h3>TV</h3><p>DStv, GOtv, StarTimes</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="how" class="rule-t">
+    <div class="wrap">
+      <p class="label">How it works</p>
+      <h2>Claim, set aside, forget.</h2>
+      <div class="steps">
+        <div class="step"><p class="n">01</p><img class="spot" src="art/spots/claim.webp" alt=""/><h3>Claim your G$</h3><p>Claim your daily GoodDollar income right inside SubBot. It goes to your own wallet.</p></div>
+        <div class="step"><p class="n">02</p><img class="spot" src="art/spots/jar.webp" alt=""/><h3>Fill a bill jar</h3><p>Make a jar for each bill, like DStv or your NEPA meter. SubBot shows how much is set aside and how much is still short.</p></div>
+        <div class="step"><p class="n">03</p><img class="spot" src="art/spots/receipt.webp" alt=""/><h3>It pays on time</h3><p>Turn on autopay and the bill is paid on the due day, once per cycle. You get the token and the receipt.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rule-t">
+    <div class="wrap split">
+      <div>
+        <p class="label">Subscriptions</p>
+        <h2>See where your money goes every month.</h2>
+        <p class="sub">Add Netflix, Spotify, iCloud or any service. SubBot reminds you before renewals and flags what you no longer use.</p>
+        <ul class="list" style="margin-top:28px">
+          <li><span class="k">01</span><div><b>Renewal alerts</b><span>A heads-up before every charge, with push notifications.</span></div></li>
+          <li><span class="k">02</span><div><b>Spend audit</b><span>Find duplicates, price hikes and trials that are about to convert.</span></div></li>
+          <li><span class="k">03</span><div><b>Data forecast</b><span>Know when your bundle will run out and which plan fits how you use it.</span></div></li>
+          <li><span class="k">04</span><div><b>Bank statement import</b><span>Upload a CSV and SubBot finds the charges that repeat.</span></div></li>
+          <li><span class="k">05</span><div><b>Email receipts <span class="soon">Coming soon</span></b><span>Find subscriptions from the receipts in your inbox.</span></div></li>
+        </ul>
+      </div>
+      <div class="ticket" aria-label="Example receipt">
+        <p class="label" style="margin:0 0 10px">Receipt</p>
+        <div class="row"><span>Bill</span><span>DStv Compact</span></div>
+        <div class="row"><span>Smartcard</span><span>••••4821</span></div>
+        <div class="row"><span>Amount</span><span class="amt">₦15,700</span></div>
+        <div class="row"><span>Paid from</span><span>DStv jar · autopay</span></div>
+        <div class="row"><span>Status</span><span class="ok">Paid</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="rule-t">
+    <div class="wrap">
+      <p class="label">Your money, your keys</p>
+      <h2>You stay in control.</h2>
+      <div class="trust">
+        <div><b>Your own wallet</b><p>G$ stays in your wallet until a bill is paid. SubBot never holds your keys.</p></div>
+        <div><b>A limit you set</b><p>Autopay only spends up to the allowance you approve. Stop it at any time with one tap.</p></div>
+        <div><b>Every payment on record</b><p>Each payment has an on-chain transaction and a receipt you can check.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="cta-band dot-grid rule-t">
+    <div class="wrap">
+      <h2>Put your bills on autopay.</h2>
+      <div class="ctas"><a class="btn btn-act" href="/app">Open SubBot</a></div>
+    </div>
+  </div>
+</main>
+
+<footer class="rule-t">
+  <div class="wrap">
+    <span>SubBot · Built on Celo with GoodDollar</span>
+    <span style="display:flex;gap:20px"><a href="/app">Open app</a><a href="https://github.com/Hoursbackhq/SubbotAi">GitHub</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

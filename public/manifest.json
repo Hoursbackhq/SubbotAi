@@ -1,18 +1,13 @@
 {
   "name": "SubBot — AI Subscription Manager",
   "short_name": "SubBot",
-  "description": "Track, audit, and optimise your SaaS spend with AI.",
-  "start_url": "/",
+  "description": "Track subscriptions and pay Nigerian bills with G$.",
+  "start_url": "/app",
   "display": "standalone",
-  "background_color": "#111111",
-  "theme_color": "#111111",
+  "background_color": "#f1efe9",
+  "theme_color": "#f1efe9",
   "orientation": "portrait",
   "icons": [
-    {
-      "src": "favicon-16.png",
-      "sizes": "16x16",
-      "type": "image/png"
-    },
     {
       "src": "favicon-32.png",
       "sizes": "32x32",
@@ -28,7 +23,13 @@
       "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

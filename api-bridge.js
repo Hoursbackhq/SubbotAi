@@ -75,6 +75,9 @@ app.get('/sw.js', (req, res) => {
   res.setHeader('Content-Type', 'application/javascript');
   res.sendFile(path.join(__dirname, 'public', 'sw.js'));
 });
+// Landing page at /, the app itself at /app
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
+app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -417,8 +420,9 @@ app.post('/update-sub', requireSession, async (req, res) => {
   res.json({ ok: true, count });
 });
 
-// Scan Gmail inbox
+// Scan Gmail inbox. Off until the Google review is done; the web app shows it as coming soon.
 app.post('/scan', requireSession, async (req, res) => {
+  if (process.env.EMAIL_SCAN_ENABLED !== 'true') return res.status(410).json({ error: 'Email scan is coming soon' });
   const { email, password, userId = 'local' } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'email and password required' });
   try {

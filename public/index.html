@@ -4,6 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>SubBot — AI Subscription Manager</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg"/>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png"/>
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
@@ -136,7 +137,7 @@
 <!-- SHARED HEADER -->
 <header id="app-header" class="hidden absolute top-0 left-0 w-full z-50 flex justify-between items-center pl-4 pr-1 border-b border-edge h-[52px]" style="background: rgb(var(--bg-app) / .94); backdrop-filter: blur(10px);">
   <div class="flex items-center gap-3">
-    <span class="wordmark text-main">SUBBOT</span>
+    <span class="flex items-center gap-2 text-main"><svg aria-hidden="true" class="h-6 w-auto" viewBox="130 48 252 388"><rect x="247" y="96" width="18" height="64" rx="9" fill="currentColor"/><circle cx="256" cy="84" r="30" fill="#ff4f00"/><path d="M146,178 Q146,150 174,150 L338,150 Q366,150 366,178 L366,396 L344.0,426 L322.0,396 L300.0,426 L278.0,396 L256.0,426 L234.0,396 L212.0,426 L190.0,396 L168.0,426 L146.0,396 Z" fill="currentColor"/><rect x="194" y="204" width="40" height="52" rx="10" style="fill:rgb(var(--bg-app))"/><rect x="278" y="204" width="40" height="52" rx="10" style="fill:rgb(var(--bg-app))"/><rect x="194" y="296" width="124" height="18" rx="9" style="fill:rgb(var(--bg-app))"/><rect x="194" y="336" width="78" height="18" rx="9" style="fill:rgb(var(--bg-app))"/></svg><span class="wordmark">SUBBOT</span></span>
     <span id="header-status" class="mono-label">No data</span>
   </div>
   <div class="flex items-center">
@@ -160,7 +161,7 @@
 <!-- SCREEN: WELCOME -->
 <div id="screen-welcome" class="screen active">
   <div class="flex-1 flex flex-col px-6 pt-8 pb-6 overflow-y-auto">
-    <span class="wordmark text-main">SUBBOT</span>
+    <span class="flex items-center gap-2 text-main"><svg aria-hidden="true" class="h-6 w-auto" viewBox="130 48 252 388"><rect x="247" y="96" width="18" height="64" rx="9" fill="currentColor"/><circle cx="256" cy="84" r="30" fill="#ff4f00"/><path d="M146,178 Q146,150 174,150 L338,150 Q366,150 366,178 L366,396 L344.0,426 L322.0,396 L300.0,426 L278.0,396 L256.0,426 L234.0,396 L212.0,426 L190.0,396 L168.0,426 L146.0,396 Z" fill="currentColor"/><rect x="194" y="204" width="40" height="52" rx="10" style="fill:rgb(var(--bg-app))"/><rect x="278" y="204" width="40" height="52" rx="10" style="fill:rgb(var(--bg-app))"/><rect x="194" y="296" width="124" height="18" rx="9" style="fill:rgb(var(--bg-app))"/><rect x="194" y="336" width="78" height="18" rx="9" style="fill:rgb(var(--bg-app))"/></svg><span class="wordmark">SUBBOT</span></span>
     <img src="art/rooftop.webp" alt="" class="w-full mt-6 select-none pointer-events-none"/>
     <h1 class="display-num text-[44px] text-main mt-6">Every bill,<br/>paid in G$.</h1>
     <ol class="mt-6 space-y-3">
@@ -214,7 +215,7 @@
       </section>
 
       <div class="grid grid-cols-2 gap-3">
-        <button data-action="showGmailModal" class="btn-line py-3 text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-envelope text-xs"></i>Scan Gmail</button>
+        <button data-action="showCsvImportModal" class="btn-line py-3 text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-file-arrow-up text-xs"></i>Import statement</button>
         <button data-action="nav" data-target="audit" class="btn-line py-3 text-sm flex items-center justify-center gap-2"><i class="fa-solid fa-chart-simple text-xs"></i>Run audit</button>
       </div>
 
@@ -378,10 +379,9 @@
         <div class="mt-2 divide-y divide-edge border-y border-edge">
           <div class="py-4 flex items-center gap-3">
             <img src="art/spots/search.webp" alt="" class="w-12 h-12 object-contain shrink-0"/>
-            <div class="flex-1 min-w-0"><p class="font-medium text-main">Scan Gmail</p><p id="settings-email-display" class="text-sm text-muted truncate">Not set up</p></div>
-            <button data-action="showGmailModal" class="btn-line px-3.5 py-2 text-xs shrink-0">Scan</button>
+            <div class="flex-1 min-w-0"><p class="font-medium text-main">Find them in your email</p><p class="text-sm text-muted">Spot receipts automatically. Coming soon.</p></div>
+            <span class="mono-label border border-edge rounded-full px-3 py-1.5 shrink-0">Soon</span>
           </div>
-          <input id="settings-email" type="email" placeholder="you@gmail.com" class="hidden"/>
           <div class="py-4 flex items-center gap-3">
             <img src="art/spots/receipt.webp" alt="" class="w-12 h-12 object-contain shrink-0"/>
             <div class="flex-1 min-w-0"><p class="font-medium text-main">Import a bank statement</p><p class="text-sm text-muted">Catches charges that never email a receipt.</p></div>
@@ -470,29 +470,6 @@
   </div>
 </div>
 
-<div id="modal-gmail-scan" class="modal-overlay items-center" data-modal="modal-gmail-scan">
-  <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
-    <div class="flex justify-between items-center mb-4"><h2 class="font-semibold text-main text-xl">Run IMAP Scan</h2><button data-action="closeModal" data-modal="modal-gmail-scan"><i class="fa-solid fa-xmark text-muted text-lg hover:text-main p-2"></i></button></div>
-    <div class="space-y-3 mb-4">
-      <div><label class="mono-label">Gmail Address</label><input id="gmail-scan-email" type="email" placeholder="you@gmail.com" class="w-full bg-field border border-edge rounded-xl py-3 px-3.5 mt-1.5 text-main"/></div>
-      <div><label class="mono-label">App Password</label><input id="gmail-scan-password" type="password" placeholder="xxxx xxxx xxxx xxxx" class="w-full bg-field border border-edge rounded-lg py-2 px-3 text-xs font-mono mt-1 text-main"/></div>
-      <div class="bg-field border border-edge rounded-lg p-3 space-y-1.5">
-        <p class="text-[10px] font-bold text-muted uppercase tracking-wider"><i class="fa-solid fa-circle-info text-muted mr-1"></i>How to get an App Password</p>
-        <ol class="text-[10px] text-muted space-y-1 pl-3 list-decimal">
-          <li>Go to <a href="https://myaccount.google.com/security" target="_blank" rel="noopener" class="text-primary hover:underline font-semibold">Google Account Security</a></li>
-          <li>Enable <strong class="text-main">2-Step Verification</strong> if not already on</li>
-          <li>Search "App Passwords" or visit <a href="https://myaccount.google.com/apppasswords" target="_blank" rel="noopener" class="text-primary hover:underline font-semibold">App Passwords</a></li>
-          <li>Create a new app password (name it "SubBot")</li>
-          <li>Copy the 16-character code and paste it above</li>
-        </ol>
-        <p class="text-[10px] text-muted"><i class="fa-solid fa-lock text-[8px] mr-1"></i>Your password is sent directly to Gmail's IMAP server and never stored.</p>
-      </div>
-    </div>
-    <button data-action="runGmailScan" class="btn-act w-full py-3.5 text-base flex items-center justify-center gap-2">
-      <i class="fa-solid fa-magnifying-glass text-sm"></i> Start Scan
-    </button>
-  </div>
-</div>
 
 <!-- MODAL: SCAN RESULTS CONFIRMATION -->
 <div id="modal-scan-confirm" class="modal-overlay items-center" data-modal="modal-scan-confirm">
@@ -508,9 +485,6 @@
       <button data-action="scanSelectNone" class="text-[10px] font-bold text-muted hover:underline">Deselect All</button>
     </div>
     <div id="scan-results-list" class="space-y-2 max-h-[300px] overflow-y-auto pr-1" style="scrollbar-width:thin;"></div>
-    <button data-action="scanAnotherEmail" class="w-full mt-3 py-2.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-main text-xs font-bold flex items-center justify-center gap-2 transition-all active:scale-95">
-      <i class="fa-solid fa-plus text-[10px]"></i> Scan Another Email Account
-    </button>
     <div class="flex gap-2 mt-3">
       <button data-action="closeModal" data-modal="modal-scan-confirm" class="flex-1 py-3 rounded-xl border border-edge bg-panel hover:bg-panel-hover text-muted text-sm font-bold transition-all">Cancel</button>
       <button data-action="confirmScanSubs" class="btn-act flex-1 py-3.5 text-base">Add Selected</button>
@@ -542,7 +516,7 @@
 <div id="modal-welcome" class="modal-overlay items-center" data-modal="modal-welcome">
   <div class="w-full max-w-[400px] rounded-3xl border border-edge p-5" style="background:rgb(var(--bg-app))" data-modal-content>
     <div class="text-center mb-5">
-      <img src="logo-64.png" alt="SubBot" class="w-14 h-14 mx-auto mb-3 rounded-xl">
+      <img src="logo.svg" alt="SubBot" class="h-14 w-auto mx-auto mb-3">
       <h2 class="font-bold text-main text-lg">Welcome to SubBot</h2>
       <p class="text-xs text-muted mt-1">Your AI-powered subscription manager. Let's set you up:</p>
     </div>
@@ -555,17 +529,6 @@
         <div>
           <p class="text-sm font-bold text-main">Add Subscriptions</p>
           <p class="text-[11px] text-muted mt-0.5">Add Netflix, Spotify, or any service — name, price, and renewal date.</p>
-        </div>
-        <i class="fa-solid fa-chevron-right text-muted text-[10px] mt-3 shrink-0"></i>
-      </button>
-      <!-- Card 2: Scan email (Secondary) -->
-      <button data-action="welcomeScanEmail" class="w-full flex items-start gap-3 p-3.5 rounded-xl border border-edge bg-panel hover:bg-panel-hover transition-all text-left active:scale-[0.98]">
-        <div class="w-9 h-9 rounded-lg bg-primary/20 flex items-center justify-center shrink-0 mt-0.5">
-          <i class="fa-solid fa-envelope-open-text text-primary text-sm"></i>
-        </div>
-        <div>
-          <p class="text-sm font-bold text-main">Scan Gmail Inbox</p>
-          <p class="text-[11px] text-muted mt-0.5">We use a secure IMAP scan to detect billing receipts. Our AI only extracts subscription names and amounts — your emails are never stored or read by humans.</p>
         </div>
         <i class="fa-solid fa-chevron-right text-muted text-[10px] mt-3 shrink-0"></i>
       </button>

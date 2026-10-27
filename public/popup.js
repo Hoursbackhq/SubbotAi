@@ -1227,7 +1227,7 @@ function renderSubs() {
   if (currentFilter !== 'all') subs = subs.filter(s => (s.category || '').toLowerCase() === currentFilter);
   if (searchQ) subs = subs.filter(s => s.name.toLowerCase().includes(searchQ));
   if (!subs.length) {
-    list.innerHTML = `<div class="flex items-center gap-4 py-6"><img src="art/spots/search.webp" alt="" class="w-16 h-16 object-contain"/><p class="text-sm text-muted">${state.subscriptions.length ? 'Nothing matches that.' : 'No subscriptions yet. Tap + to add one, or scan Gmail from Settings.'}</p></div>`;
+    list.innerHTML = `<div class="flex items-center gap-4 py-6"><img src="art/spots/search.webp" alt="" class="w-16 h-16 object-contain"/><p class="text-sm text-muted">${state.subscriptions.length ? 'Nothing matches that.' : 'No subscriptions yet. Tap + to add one, or import a bank statement from Settings.'}</p></div>`;
     return;
   }
   const fmtDate = d => new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });

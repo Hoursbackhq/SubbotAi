@@ -47,9 +47,9 @@ That's judgment, not formulas.
 
 Every recommendation creates an immutable transaction on Celo mainnet via `SubBotLog.sol` — action type, estimated savings, timestamp. The agent's track record lives on-chain permanently.
 
-### Gmail scan finds everything
+### Statement import finds what you forgot
 
-Connect Gmail and SubBot scans 120 days of receipts across 50+ known billing patterns — Stripe, Apple, Google Play, PayPal, direct merchants. It catches subscriptions you forgot existed. A bank/card statement CSV import catches the ones that never sent a receipt email at all.
+Upload a bank or card statement CSV and SubBot finds charges that repeat at the same merchant. Finding subscriptions from email receipts is coming soon.
 
 ### Negotiation emails with real leverage
 
@@ -70,7 +70,6 @@ Every operation costs a fraction of G$:
 | View dashboard | **Free** |
 | Daily digest | **Free** |
 | Renewal alerts | **Free** |
-| Gmail scan | 0.10 G$ |
 | AI portfolio audit | 0.05 G$ |
 | CSV export | 0.05 G$ |
 | Negotiation email | 0.10 G$ |
@@ -153,9 +152,9 @@ G$ credit system. Users deposit GoodDollar tokens, agent spends them for operati
 ## Quick start
 
 **Web app (no setup):**
-1. Open [subbotai.xyz](https://subbotai.xyz)
+1. Open [subbotai.xyz/app](https://subbotai.xyz/app)
 2. Sign in with Web3Auth (Google, email, or wallet)
-3. Add subscriptions with **+**, scan Gmail, or import a bank/card statement CSV
+3. Add subscriptions with **+** or import a bank/card statement CSV
 4. Dashboard, Audit, and Alerts update in real time
 
 ---
