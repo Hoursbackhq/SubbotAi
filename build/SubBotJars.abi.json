@@ -385,18 +385,18 @@
     "inputs": [
       {
         "internalType": "uint256[]",
-        "name": "jarIds",
+        "name": "",
         "type": "uint256[]"
       },
       {
         "internalType": "uint16[]",
-        "name": "bps",
+        "name": "",
         "type": "uint16[]"
       }
     ],
     "name": "setStreamSplit",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "pure",
     "type": "function"
   },
   {
@@ -416,13 +416,13 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "who",
+        "name": "",
         "type": "address"
       }
     ],
     "name": "settle",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "pure",
     "type": "function"
   },
   {

@@ -182,6 +182,58 @@ node api-bridge.js
 
 Weekly LLM portfolio re-analysis runs via cron — see `crontab-setup.sh`.
 
+### Deploying the security fixes
+
+Deploy the API, frontend, Python scripts and rebuilt contract artifacts together.
+Rotate `SESSION_SECRET` at rollout to invalidate sessions that could have been
+issued under the previous identity-binding rules. Account data and expensive
+operations now require sign-in; anonymous `local` access is no longer accepted.
+Python tasks are limited to one active task and ten runs per hour per account,
+with four active tasks per server process. Apply shared rate limits if running
+multiple workers.
+
+Web3Auth verification uses signed identity claims only, with issuer, audience,
+expiry, algorithm and key checks. Defaults match the documented social-token
+issuer and JWKS; verify `WEB3AUTH_ISSUER` and `WEB3AUTH_JWKS_URI` against the SDK
+version and dashboard before rollout. Never relax verification to fix a login
+mismatch. Older client-selected account IDs may require a verified migration.
+
+`SubBotCredits` version 2 requires the agent to register the account's verified
+linked wallet through `/credits/register` before a deposit. Other wallets cannot
+reserve an ID, deposit against it, or withdraw its credits. The binding persists
+at zero balance. Changing funding wallets requires an explicit migration.
+Deposits refuse contracts without security version 2.
+
+`SubBotJars` stream funding is disabled because sampling the current flow rate
+cannot prove historical deposits. Ordinary deposits, withdrawals and capped
+payments remain available. Do not send streams to the replacement contract.
+
+Existing contracts are not upgradeable. Deploy replacements and reconcile and
+migrate existing balances and active streams before switching
+`CREDITS_CONTRACT_ADDRESS` and `JARS_CONTRACT_ADDRESS`. New credit deposits use
+the server-registered contract address. Update the legacy withdrawal address in
+`public/popup.js` only as part of that migration, and update published links.
+Repository changes do not repair deployed contracts or existing balances.
+
+New account directories use a SHA-256 identifier shared by Node and Python.
+Existing directories remain accessible only when `web3auth-meta.json` identifies
+the same account. Back up user data and review legacy directories without
+matching metadata; do not assign them automatically. Reinstall the weekly cron
+with `crontab-setup.sh` so it uses `audit-all-users.py` and includes `user_paths.py`.
+
+Stop the API and scheduled scanners during deployment. Both use
+`scanned-subscriptions.json.lock` and the same `DATA_DIR`. Lock contention aborts
+a write after three seconds; bridge writes return HTTP 503. Locks are never
+removed merely because they are old. After a crash, stop writers, verify the
+abandoned lock (new locks record the process ID), and remove only that lock
+before restarting. The former Python `.scanned-subscriptions.json.lock` name is
+no longer used.
+
+Regression checks: `npm test`,
+`python3 -m unittest discover -s test -p 'test_*.py'`, and `forge test`.
+The audit's network-denied checks use direct handler tests; legacy tests that
+start HTTP servers require a separate local test run.
+
 ### Deploy to VPS
 
 ```bash

@@ -550,7 +550,7 @@ def main():
         scanned_from=scanned_emails,
         cancelled_records=cancelled_subs,
     )
-    out_file = sub_store.USER_DATA_DIR / user_id / "scanned-subscriptions.json"
+    out_file = sub_store.user_path(sub_store.USER_DATA_DIR, user_id) / "scanned-subscriptions.json"
 
     print(f"\nSaved {len(hermes_subs)} subscriptions to {out_file}")
 

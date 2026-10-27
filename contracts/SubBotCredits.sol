@@ -24,6 +24,7 @@ interface IERC20 {
  * GoodDollar (G$) on Celo: 0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A
  */
 contract SubBotCredits {
+    function securityVersion() external pure returns (uint256) { return 2; }
 
     // ── Constants ────────────────────────────────────────────────────────────
 
@@ -79,6 +80,15 @@ contract SubBotCredits {
 
     // ── User: Deposit G$ ─────────────────────────────────────────────────────
 
+    /// Bind an account only after the service verifies its linked wallet.
+    /// Public deposits cannot reserve somebody else's social-login identifier.
+    function bindDepositor(string calldata userId, address depositor) external onlyAgent {
+        require(depositor != address(0), "Invalid depositor");
+        bytes32 key = _key(userId);
+        require(depositors[key] == address(0) || depositors[key] == depositor, "Already bound");
+        depositors[key] = depositor;
+    }
+
     /**
      * @notice Deposit G$ tokens as credits. User must approve this contract first.
      * @param userId  User identifier (hashed for privacy)
@@ -88,8 +98,10 @@ contract SubBotCredits {
         require(amount > 0, "Amount must be > 0");
 
         bytes32 key = _key(userId);
+        address depositor = depositors[key];
+        require(depositor != address(0) && depositor == msg.sender, "Not your credits");
 
-        GD.transferFrom(msg.sender, address(this), amount);
+        require(GD.transferFrom(msg.sender, address(this), amount), "G$ transfer failed");
 
         UserCredits storage c = credits[key];
         if (c.firstDeposit == 0) c.firstDeposit = block.timestamp;
@@ -97,7 +109,6 @@ contract SubBotCredits {
         c.balance        += amount;
         c.totalDeposited += amount;
         totalDeposits    += amount;
-        depositors[key]   = msg.sender;
 
         emit Deposited(key, msg.sender, amount, c.balance);
     }
@@ -120,7 +131,7 @@ contract SubBotCredits {
         c.balance     -= withdrawAmt;
         totalDeposits -= withdrawAmt;
 
-        GD.transfer(msg.sender, withdrawAmt);
+        require(GD.transfer(msg.sender, withdrawAmt), "G$ transfer failed");
 
         emit Withdrawn(key, msg.sender, withdrawAmt);
     }
@@ -148,7 +159,7 @@ contract SubBotCredits {
         totalSpent   += cost;
 
         // Transfer G$ to agent wallet to cover operational costs
-        GD.transfer(agent, cost);
+        require(GD.transfer(agent, cost), "G$ transfer failed");
 
         emit Spent(key, cost, action, c.balance);
     }
@@ -170,7 +181,7 @@ contract SubBotCredits {
         c.totalSpent += amount;
         totalSpent   += amount;
 
-        GD.transfer(agent, amount);
+        require(GD.transfer(agent, amount), "G$ transfer failed");
 
         emit Spent(key, amount, action, c.balance);
     }

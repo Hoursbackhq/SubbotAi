@@ -202,6 +202,24 @@
         "type": "string"
       },
       {
+        "internalType": "address",
+        "name": "depositor",
+        "type": "address"
+      }
+    ],
+    "name": "bindDepositor",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string",
+        "name": "userId",
+        "type": "string"
+      },
+      {
         "internalType": "string",
         "name": "action",
         "type": "string"
@@ -300,6 +318,19 @@
       }
     ],
     "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "securityVersion",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "pure",
     "type": "function"
   },
   {

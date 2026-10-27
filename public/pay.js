@@ -110,13 +110,13 @@ function renderHistory(payments) {
     const date = new Date(p.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     return `<div class="py-3 ${i ? 'rule-t' : ''}">
       <div class="flex justify-between gap-3"><p class="text-[15px] text-main truncate">${escapeHtml(p.planName)}</p><p class="font-mono text-sm text-main shrink-0">${fmtNGN(p.amountNGN)}</p></div>
-      <div class="flex justify-between gap-3 font-mono text-xs mt-0.5"><span class="text-muted">${date} · ${escapeHtml(p.billersCode)}${p.source === 'jar' ? ' · from jar' : p.source === 'autopay' ? ' · autopay' : ''}</span><span class="${cls}">${label} · ${fmtGD(p.amountGD)} G$</span></div>
+      <div class="flex justify-between gap-3 font-mono text-xs mt-0.5"><span class="text-muted">${date} · ${escapeHtml(p.billersCode)}${p.source === 'jar' ? ' · from jar' : p.source === 'autopay' ? ' · autopay' : ''}</span><span class="${cls}">${escapeHtml(label)} · ${fmtGD(p.amountGD)} G$</span></div>
       ${p.token ? `<p class="font-mono text-xs text-main mt-1 break-all">Token ${escapeHtml(String(p.token).replace(/^Token\s*:\s*/i, ''))}</p>` : ''}
     </div>`;
   }).join('');
 }
 
-function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
 
 // ── Data ───────────────────────────────────────────────────────────────────
 function renderData(r) {
@@ -329,7 +329,7 @@ function renderJars() {
         ${pay.contract ? `<button data-action="openJarFund" data-jar="${j.id}" class="btn-line px-3.5 py-1.5 text-xs whitespace-nowrap shrink-0">Add G$</button>` : ''}
       </div>
     </div>`;
-  }).join('') + (pay.contract ? streamRow() : `<p class="font-mono text-xs text-muted">Jars save your plan now; G$ goes in once the jar contract is live.</p>`);
+  }).join('') + (pay.contract ? '' : `<p class="font-mono text-xs text-muted">Jars save your plan now; G$ goes in once the jar contract is live.</p>`);
 }
 
 function dueText(j) {
@@ -582,21 +582,7 @@ async function afterClaim(from, claimedWei) {
 }
 
 async function startStream() {
-  const perDay = parseFloat($('stream-per-day')?.value);
-  if (!(perDay > 0)) { toast('Enter G$ per day'); return; }
-  const shares = pay.jars.filter(j => j.splitPct > 0);
-  if (!shares.length) { toast('Give at least one jar a share first'); return; }
-  try {
-    const { provider, from } = await wallet();
-    // Record the split before the flow starts so every second is credited.
-    toast('Confirm the split…');
-    await sendTx(provider, from, pay.contract, iface(JARS_ABI).encodeFunctionData('setStreamSplit', [shares.map(j => BigInt(j.id)), shares.map(j => j.splitPct * 100)]));
-    const flowrate = ethers.parseUnits(String(perDay), 18) / 86400n;
-    toast('Confirm the stream…');
-    await sendTx(provider, from, CFA_FORWARDER, iface(FORWARDER_ABI).encodeFunctionData('setFlowrate', [GD_TOKEN, pay.contract, flowrate]));
-    toast(`Streaming ${fmtGD(perDay)} G$ a day into your jars`);
-    track('action', { action: 'stream_start' });
-  } catch (e) { toast(e.code === 4001 ? 'Cancelled' : e.message); }
+  toast('Stream funding is unavailable. Add G$ to a jar instead.');
 }
 
 // ── Events ─────────────────────────────────────────────────────────────────

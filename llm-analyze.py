@@ -21,6 +21,7 @@ import urllib.request
 import urllib.error
 from datetime import date, datetime
 from pathlib import Path
+from user_paths import user_path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import load_env
@@ -29,13 +30,13 @@ load_env.load_hermes_env()
 API_KEY               = os.getenv("OPENAI_API_KEY", "")
 API_BASE              = os.getenv("OPENAI_BASE_URL", "https://inference-api.nousresearch.com/v1")
 MODEL                 = os.getenv("LLM_MODEL", "NousResearch/Hermes-3-Llama-3.1-70B")
-USER_DATA_DIR         = Path.home() / ".hermes" / "user-data"
+USER_DATA_DIR         = Path(os.environ.get("DATA_DIR") or Path.home() / ".hermes") / "user-data"
 BRIDGE_URL            = os.getenv("BRIDGE_URL", "http://localhost:3747")
 INTERNAL_SERVICE_TOKEN = os.getenv("INTERNAL_SERVICE_TOKEN", "")
 
 
 def load_subscriptions(user_id: str) -> dict:
-    sub_file = USER_DATA_DIR / user_id / "scanned-subscriptions.json"
+    sub_file = user_path(USER_DATA_DIR, user_id) / "scanned-subscriptions.json"
     if sub_file.exists():
         with open(sub_file) as f:
             return json.load(f)
@@ -43,7 +44,7 @@ def load_subscriptions(user_id: str) -> dict:
 
 
 def load_token_usage(user_id: str) -> dict | None:
-    usage_file = USER_DATA_DIR / user_id / "token-usage.json"
+    usage_file = user_path(USER_DATA_DIR, user_id) / "token-usage.json"
     if usage_file.exists():
         with open(usage_file) as f:
             return json.load(f)
@@ -212,7 +213,7 @@ def main():
         sys.exit(1)
 
     # Save result
-    out_dir  = USER_DATA_DIR / args.user_id
+    out_dir  = user_path(USER_DATA_DIR, args.user_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "llm-analysis.json"
     with open(out_file, "w") as f:

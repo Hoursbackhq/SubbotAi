@@ -1,3 +1,11 @@
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function safeHttpUrl(value) {
+  try { const url = new URL(value, location.origin); return ['https:', 'http:'].includes(url.protocol) ? url.href : '#'; }
+  catch (_) { return '#'; }
+}
+
 /* popup.js — SubBot Extension (view layer for @SubmanagerAgentBot) */
 
 const API            = 'https://portal-subscription-manager-production.up.railway.app';
@@ -419,7 +427,7 @@ function refreshDashboard() {
     return `<div class="bg-panel p-3 rounded-xl flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-1.5 h-1.5 rounded-full ${color}"></div>
-        <div><p class="text-sm font-semibold">${s.name}</p><p class="text-[10px] text-muted font-mono">${dateStr} · $${s.monthly_cost}</p></div>
+        <div><p class="text-sm font-semibold">${escapeHtml(s.name)}</p><p class="text-[10px] text-muted font-mono">${dateStr} · $${escapeHtml(s.monthly_cost)}</p></div>
       </div>
       <i class="fa-solid fa-chevron-right text-muted text-[10px]"></i>
     </div>`;
@@ -460,15 +468,15 @@ function renderSubs() {
     const cost    = s.monthly_cost_usd || s.monthly_cost || 0;
     const cur     = (s.currency && s.currency !== 'USD') ? ` (${s.currency})` : '';
     return `<div class="h-[72px] glass rounded-xl px-3 flex items-center gap-3 border border-edge hover:bg-panel/40 transition-all cursor-pointer">
-      <div class="w-10 h-10 rounded-lg ${initBg} flex items-center justify-center font-bold text-lg flex-shrink-0">${s.name.charAt(0)}</div>
+      <div class="w-10 h-10 rounded-lg ${initBg} flex items-center justify-center font-bold text-lg flex-shrink-0">${escapeHtml(s.name.charAt(0))}</div>
       <div class="flex-1 min-w-0">
         <div class="flex justify-between items-start">
-          <h3 class="font-semibold text-sm truncate">${s.name}</h3>
-          <span class="font-mono text-sm font-medium">$${cost}<span class="text-[10px] text-muted">/mo${cur}</span></span>
+          <h3 class="font-semibold text-sm truncate">${escapeHtml(s.name)}</h3>
+          <span class="font-mono text-sm font-medium">$${escapeHtml(cost)}<span class="text-[10px] text-muted">/mo${escapeHtml(cur)}</span></span>
         </div>
         <div class="flex items-center gap-2 mt-0.5">
-          <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">${s.category || 'SaaS'}</span>
-          <span class="${hColor} text-[10px] font-mono">♥ ${health}</span>
+          <span class="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-secondary/10 text-secondary">${escapeHtml(s.category || 'SaaS')}</span>
+          <span class="${hColor} text-[10px] font-mono">♥ ${escapeHtml(health)}</span>
           ${s.next_renewal ? `<span class="text-[10px] text-muted ml-auto">Renew: ${new Date(s.next_renewal).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>` : ''}
         </div>
       </div>
@@ -493,7 +501,7 @@ function runAudit() {
 
   const oDiv = document.getElementById('overlaps-list');
   oDiv.innerHTML = overlaps.length
-    ? overlaps.map(([cat, names]) => `<div class="bg-panel p-3 rounded-xl border-l-2 border-error/50 text-xs"><p class="font-medium">${cat.toUpperCase()} overlap</p><p class="text-muted mt-0.5">${names.join(' + ')}</p></div>`).join('')
+    ? overlaps.map(([cat, names]) => `<div class="bg-panel p-3 rounded-xl border-l-2 border-error/50 text-xs"><p class="font-medium">${escapeHtml(cat.toUpperCase())} overlap</p><p class="text-muted mt-0.5">${escapeHtml(names.join(' + '))}</p></div>`).join('')
     : '<p class="text-xs text-muted text-center py-2">No overlaps detected. 🎉</p>';
 
   const rows = document.getElementById('health-rows');
@@ -502,9 +510,9 @@ function runAudit() {
     const badge = h >= 80 ? '✅ Keep' : h >= 50 ? '⚠️ Reconsider' : '❌ Cancel';
     const bc    = h >= 80 ? 'bg-tertiary' : h >= 50 ? 'bg-amber-400' : 'bg-error';
     return `<div class="flex items-center justify-between px-3 py-2.5">
-      <span class="text-xs truncate flex-1">${s.name}</span>
-      <span class="text-xs font-mono mx-2">$${s.monthly_cost_usd || s.monthly_cost}</span>
-      <div class="w-16 bg-panel rounded-full h-1.5 mr-2"><div class="${bc} h-1.5 rounded-full" style="width:${h}%"></div></div>
+      <span class="text-xs truncate flex-1">${escapeHtml(s.name)}</span>
+      <span class="text-xs font-mono mx-2">$${escapeHtml(s.monthly_cost_usd || s.monthly_cost)}</span>
+      <div class="w-16 bg-panel rounded-full h-1.5 mr-2"><div class="${bc} h-1.5 rounded-full" style="width:${Math.max(0, Math.min(100, Number(h) || 0))}%"></div></div>
       <span class="text-[10px] whitespace-nowrap">${badge}</span>
     </div>`;
   }).join('') || '<p class="text-xs text-muted text-center py-3">No data.</p>';
@@ -519,7 +527,7 @@ function runAudit() {
 
   const qd = document.getElementById('quick-wins');
   qd.innerHTML = wins.length
-    ? wins.map(w => `<div class="bg-panel p-3 rounded-xl border-l-2 border-primary text-xs">${w}</div>`).join('')
+    ? wins.map(w => `<div class="bg-panel p-3 rounded-xl border-l-2 border-primary text-xs">${escapeHtml(w)}</div>`).join('')
     : '<p class="text-xs text-muted text-center py-2">No easy wins — you\'re well optimised!</p>';
 }
 
@@ -549,8 +557,8 @@ function renderAlerts() {
         <div class="relative z-10 mt-2.5 flex-shrink-0"><div class="w-3 h-3 rounded-full ${dotColor} ring-4"></div></div>
         <div class="flex-1 bg-panel rounded-xl p-3 border border-edge">
           <div class="flex justify-between items-start">
-            <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-muted">${s.provider || ''}</p></div>
-            <span class="font-mono text-sm">$${s.monthly_cost}</span>
+            <div><h3 class="text-sm font-semibold">${escapeHtml(s.name)}</h3><p class="text-[10px] text-muted">${escapeHtml(s.provider || '')}</p></div>
+            <span class="font-mono text-sm">$${escapeHtml(s.monthly_cost)}</span>
           </div>
           <div class="mt-1.5">${urgLabel}</div>
         </div>
@@ -564,10 +572,10 @@ function renderAlerts() {
   neg.innerHTML = eligible.length
     ? eligible.map(s => `<div class="bg-panel rounded-2xl p-4 border border-edge">
         <div class="flex items-center gap-3 mb-3">
-          <div class="w-10 h-10 rounded-lg bg-panel flex items-center justify-center font-bold">${s.name.charAt(0)}</div>
-          <div><h3 class="text-sm font-semibold">${s.name}</h3><p class="text-[10px] text-tertiary">Eligible for discount</p></div>
+          <div class="w-10 h-10 rounded-lg bg-panel flex items-center justify-center font-bold">${escapeHtml(s.name.charAt(0))}</div>
+          <div><h3 class="text-sm font-semibold">${escapeHtml(s.name)}</h3><p class="text-[10px] text-tertiary">Eligible for discount</p></div>
         </div>
-        <button data-action="draftEmail" data-service="${s.name}" class="w-full py-2 px-4 rounded-xl border border-secondary text-secondary text-xs font-semibold flex items-center justify-center gap-2">
+        <button data-action="draftEmail" data-service="${escapeHtml(s.name)}" class="w-full py-2 px-4 rounded-xl border border-secondary text-secondary text-xs font-semibold flex items-center justify-center gap-2">
           <i class="fa-solid fa-envelope text-sm"></i> Draft Email
         </button>
       </div>`).join('')
@@ -619,7 +627,7 @@ function renderTxHistory() {
     return `<div class="flex items-center justify-between p-3 rounded-xl bg-panel border border-edge">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center"><i class="fa-solid ${icon} text-primary text-sm"></i></div>
-        <div><p class="text-xs font-medium">${label}</p><p class="text-[10px] text-muted font-mono">${date}</p></div>
+        <div><p class="text-xs font-medium">${escapeHtml(label)}</p><p class="text-[10px] text-muted font-mono">${date}</p></div>
       </div>
       <span class="text-xs font-mono font-bold ${amtColor}">${amt}</span>
     </div>`;

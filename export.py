@@ -14,6 +14,7 @@ import os
 import argparse
 from datetime import datetime, date
 from pathlib import Path
+from user_paths import user_path
 
 sys.path.insert(0, str(Path.home() / ".hermes"))
 
@@ -27,7 +28,7 @@ except ImportError:
 
 
 def load_data(user_id: str) -> dict:
-    data_file = Path.home() / ".hermes" / "user-data" / user_id / "scanned-subscriptions.json"
+    data_file = user_path(Path(os.environ.get("DATA_DIR") or Path.home() / ".hermes") / "user-data", user_id) / "scanned-subscriptions.json"
     if data_file.exists():
         with open(data_file) as f:
             return json.load(f)
@@ -123,7 +124,7 @@ def main():
     total_usd = sum(to_usd(s.get("monthly_cost", 0), s.get("currency", "USD")) for s in active)
 
     # Generate CSV
-    out_dir = Path.home() / ".hermes" / "user-data" / args.user_id
+    out_dir = user_path(Path(os.environ.get("DATA_DIR") or Path.home() / ".hermes") / "user-data", args.user_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = str(out_dir / f"subscription-report-{datetime.now().strftime('%Y-%m-%d')}.csv")
     generate_csv(data, out_path)

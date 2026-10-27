@@ -93,33 +93,26 @@ contract SubBotJarsTest {
         vm.prank(agent); vm.expectRevert(bytes("Insufficient balance")); jars.payBill(alice, 1, 6 ether, "x");
     }
 
-    function test_streamAccruesBySplit() public {
-        uint16[] memory bps = new uint16[](2); bps[0] = 6000; bps[1] = 3000;
-        fwd.setRate(alice, 1e15); // 0.001 G$/s
-        vm.prank(alice); jars.setStreamSplit(_ids(1, 2), bps);
-        gd.mint(address(jars), 100 ether); // what the stream would have delivered
-        vm.warp(block.timestamp + 1000);
-        require(_bal(alice, 1) == 0.6 ether && _bal(alice, 2) == 0.3 ether, "live view");
-        jars.settle(alice);
-        require(_bal(alice, 1) == 0.6 ether && jars.unallocated(alice) == 0.1 ether, "settled");
-    }
 
-    function test_streamUsesLowerRate() public {
+    function test_streamFundingIsDisabled() public {
         uint16[] memory bps = new uint16[](1); bps[0] = 10000;
         uint256[] memory ids = new uint256[](1); ids[0] = 1;
-        fwd.setRate(alice, 1e15);
-        vm.prank(alice); jars.setStreamSplit(ids, bps);
-        fwd.setRate(alice, 5e15); // raised without re-splitting: must not over-credit
-        vm.warp(block.timestamp + 100);
-        jars.settle(alice);
-        require(_bal(alice, 1) == 0.1 ether, "old rate used");
-        vm.warp(block.timestamp + 100);
-        jars.settle(alice);
-        require(_bal(alice, 1) == 0.6 ether, "new rate after settle");
+        fwd.setRate(bob, 1e15);
+        vm.prank(bob); vm.expectRevert(bytes("Streaming is disabled")); jars.setStreamSplit(ids, bps);
     }
 
-    function test_splitOver100Reverts() public {
-        uint16[] memory bps = new uint16[](2); bps[0] = 6000; bps[1] = 5000;
-        vm.prank(alice); vm.expectRevert(bytes("Split over 100%")); jars.setStreamSplit(_ids(1, 2), bps);
+    function test_stoppingAndRestartingFlowCannotMintCredits() public {
+        vm.prank(alice); jars.deposit(_ids(1, 2), _amts(100 ether, 0));
+        fwd.setRate(bob, 1e15);
+        jars.settle(bob);
+        vm.warp(block.timestamp + 1);
+        fwd.setRate(bob, 0);
+        vm.warp(block.timestamp + 1000);
+        fwd.setRate(bob, 1e15);
+        jars.settle(bob);
+        require(_bal(bob, 1) == 0 && jars.unallocated(bob) == 0, "unbacked credits");
+        vm.prank(bob); vm.expectRevert(bytes("Insufficient balance")); jars.withdraw(1, 0);
+        vm.prank(alice); jars.withdraw(1, 0);
+        require(gd.balanceOf(alice) == 1000 ether, "victim funds depleted");
     }
 }

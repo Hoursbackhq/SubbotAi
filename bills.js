@@ -25,6 +25,7 @@ const crypto = require('crypto');
 const path   = require('path');
 const fs     = require('fs');
 const { ethers } = require('ethers');
+const { asyncRoute, storageErrorHandler } = require('./http-errors');
 
 const GD_TOKEN       = '0x62B8B11039FcfE5aB0C56E502b1C372A3d2a9c7A';
 const TRANSFER_TOPIC = ethers.id('Transfer(address,address,uint256)');
@@ -277,7 +278,7 @@ function createBillsRouter(deps) {
   const express = require('express');
   const {
     userDir, readJSON, writeJSON, withFileLock, requireSession, requireInternalToken,
-    provider, getJarsContract = () => null, getAutopay = () => null, env = process.env,
+    provider, getJarsContract = () => null, getCreditsContract = () => null, getAutopay = () => null, env = process.env,
     vtpass = createVtpassClient({ env }), ngnPerGD = createPriceFeed({ env }),
     usedTxFile, now = () => new Date(),
   } = deps;
@@ -436,7 +437,7 @@ function createBillsRouter(deps) {
     return true;
   }
 
-  router.post('/bills/pay', requireSession, requireUser, async (req, res) => {
+  router.post('/bills/pay', requireSession, requireUser, asyncRoute(async (req, res) => {
     const { userId, quoteId, txHash, jarId } = req.body;
     const quote = quotes.get(quoteId);
     if (!quote || quote.userId !== userId) return res.status(404).json({ error: 'Quote expired — get a new price' });
@@ -481,7 +482,7 @@ function createBillsRouter(deps) {
       ...entry,
       error: entry.status === 'refund_due' ? 'The provider could not deliver this bill. Your G$ is safe — it has been flagged for a refund.' : undefined,
     });
-  });
+  }));
 
   router.get('/bills/history', requireSession, requireUser, (req, res) => {
     const data = readJSON(billsFile(req.query.userId)) || { payments: [] };
@@ -495,7 +496,7 @@ function createBillsRouter(deps) {
     linkNonces.set(req.body.userId, { nonce, expiresAt: Date.now() + 5 * 60 * 1000 });
     res.json({ message: `Link this wallet to SubBot bill jars\n\nNonce: ${nonce}` });
   });
-  router.post('/wallet/link', requireSession, requireUser, async (req, res) => {
+  router.post('/wallet/link', requireSession, requireUser, asyncRoute(async (req, res) => {
     const { userId, address, signature } = req.body;
     const entry = linkNonces.get(userId);
     linkNonces.delete(userId);
@@ -507,9 +508,31 @@ function createBillsRouter(deps) {
     const file = metaFile(userId);
     await withFileLock(file, () => writeJSON(file, { ...(readJSON(file) || { userId }), wallet: recovered }));
     res.json({ ok: true, wallet: recovered });
-  });
+  }));
 
   // ── Jars (metadata off-chain, balances on-chain) ──────────────────────────
+  router.post('/credits/register', requireSession, requireUser, asyncRoute(async (req, res) => {
+    const contract = getCreditsContract();
+    if (!contract) return res.status(503).json({ error: 'Credits are not configured' });
+    try {
+      if (await contract.securityVersion() < 2n) throw new Error('Old contract');
+    } catch (_) {
+      return res.status(503).json({ error: 'Credits contract upgrade required' });
+    }
+    const wallet = linkedWallet(req.userId);
+    if (!wallet) return res.status(403).json({ error: 'Verify your wallet before depositing credits' });
+    const key = ethers.keccak256(ethers.toUtf8Bytes(req.userId));
+    const bound = await contract.depositors(key);
+    if (bound !== ethers.ZeroAddress && bound.toLowerCase() !== wallet.toLowerCase()) {
+      return res.status(409).json({ error: 'Credits are bound to a different wallet' });
+    }
+    if (bound === ethers.ZeroAddress) {
+      const tx = await contract.bindDepositor(req.userId, wallet);
+      await tx.wait();
+    }
+    res.json({ creditsAddress: await contract.getAddress(), wallet });
+  }));
+
   function cleanJar(j, id) {
     const svc = findService(j.serviceID);
     if (!svc) throw Object.assign(new Error('Pick which bill this jar pays'), { status: 400 });
@@ -605,7 +628,7 @@ function createBillsRouter(deps) {
     } catch (e) { res.status(e.status || 500).json({ error: e.message }); }
   });
 
-  router.post('/jars/delete', requireSession, requireUser, async (req, res) => {
+  router.post('/jars/delete', requireSession, requireUser, asyncRoute(async (req, res) => {
     const { userId, jarId } = req.body;
     const file = jarsFile(userId);
     await withFileLock(file, () => {
@@ -614,10 +637,10 @@ function createBillsRouter(deps) {
       writeJSON(file, data);
     });
     res.json({ ok: true });
-  });
+  }));
 
   // ── Data: readings, forecast, advice ──────────────────────────────────────
-  router.post('/data/reading', requireSession, requireUser, async (req, res) => {
+  router.post('/data/reading', requireSession, requireUser, asyncRoute(async (req, res) => {
     const { userId } = req.body;
     const mb = Number(req.body.mb);
     if (!Number.isFinite(mb) || mb < 0 || mb > 10 * 1024 * 1024) return res.status(400).json({ error: 'Enter your balance in MB or GB' });
@@ -628,7 +651,7 @@ function createBillsRouter(deps) {
       writeJSON(file, data);
     });
     res.json({ ok: true });
-  });
+  }));
 
   router.get('/data/insights', requireSession, requireUser, async (req, res) => {
     const data = readJSON(billsFile(req.query.userId)) || { dataPurchases: [], dataReadings: [] };
@@ -653,7 +676,9 @@ function createBillsRouter(deps) {
     const root = path.dirname(userDir('probe'));
     const lagos = new Date(now().getTime() + 3600000);
     const day = lagos.getUTCDate(), cycle = lagos.toISOString().slice(0, 7);
-    for (const uid of fs.readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory()).map(d => d.name)) {
+    for (const directory of fs.readdirSync(root, { withFileTypes: true }).filter(d => d.isDirectory())) {
+      const uid = readJSON(path.join(root, directory.name, 'web3auth-meta.json'))?.userId;
+      if (!uid || uid === 'local') continue;
       const file = jarsFile(uid);
       const data = readJSON(file);
       if (!data?.jars?.length) continue;
@@ -705,6 +730,7 @@ function createBillsRouter(deps) {
     res.json({ ok: true, results });
   });
 
+  router.use(storageErrorHandler);
   return router;
 }
 

@@ -46,12 +46,15 @@ function verifySessionToken(token, secret = SESSION_SECRET) {
   }
 }
 
-// Anonymous 'local' userId is a pre-existing shared sandbox bucket, not a
-// specific real person's data — allowed through without a session. Any other
-// userId (w3a:... or a linked Telegram numeric ID) must present a matching token.
+// Every supplied identifier must name the same authenticated account. Checking
+// only the first one lets a GET body mask a different query/path account.
 function requireSession(req, res, next) {
-  const userId = req.body?.userId || req.query?.userId || req.params?.userId || 'local';
-  if (userId === 'local') return next();
+  const ids = [req.body?.userId, req.query?.userId, req.params?.userId].filter(id => id !== undefined);
+  if (!ids.length || ids.some(id => typeof id !== 'string' || !id || id === 'local')) {
+    return res.status(401).json({ error: 'Sign in to access account data' });
+  }
+  const userId = ids[0];
+  if (ids.some(id => id !== userId)) return res.status(400).json({ error: 'Conflicting user IDs' });
 
   const authHeader = req.headers['authorization'] || '';
   const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -59,6 +62,7 @@ function requireSession(req, res, next) {
   if (!verifiedUserId || verifiedUserId !== userId) {
     return res.status(401).json({ error: 'Unauthorized — session missing or does not match userId' });
   }
+  req.userId = verifiedUserId;
   next();
 }
 

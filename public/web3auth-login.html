@@ -144,7 +144,7 @@ function storeAndBroadcast(w3a) {
 
   // Also try postMessage to opener (fallback)
   try {
-    if (window.opener) window.opener.postMessage({ type: 'web3auth_result', data: w3a }, '*');
+    if (window.opener) window.opener.postMessage({ type: 'web3auth_result', data: w3a }, window.location.origin);
   } catch (_) {}
 }
 

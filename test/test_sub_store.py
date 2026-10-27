@@ -6,7 +6,10 @@ every scan, wiping user edits and price history.
 """
 
 import sys
+import os
+import tempfile
 import unittest
+from unittest.mock import patch
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -63,6 +66,41 @@ class TestMergeSubscription(unittest.TestCase):
         result = sub_store.merge_subscription(existing, new_scan)
         ids = {s["id"] for s in result}
         self.assertEqual(ids, {"csv-imported-sub", "netflix"})
+
+
+class TestFileLock(unittest.TestCase):
+    def test_user_paths_preserve_verified_legacy_and_separate_collisions(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            alice, bob = "w3a:google:a+b@example.test", "w3a:google:a_b@example.test"
+            legacy = root / "w3a:google:a_b_example.test"
+            legacy.mkdir()
+            (legacy / "web3auth-meta.json").write_text(sub_store.json.dumps({"userId": alice}))
+            self.assertEqual(sub_store.user_path(root, alice), legacy)
+            self.assertNotEqual(sub_store.user_path(root, bob), legacy)
+            self.assertEqual(sub_store.user_path(root, "w3a:google:../../escape").parent, root)
+
+    def test_timeout_preserves_old_lock_and_skips_write(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = Path(directory) / "scanned-subscriptions.json.lock"
+            lock.write_text("another writer")
+            os.utime(lock, (0, 0))
+            with patch.object(sub_store, "LOCK_TIMEOUT_S", 0):
+                with self.assertRaises(TimeoutError):
+                    with sub_store._file_lock(lock):
+                        self.fail("entered another writer's lock")
+            self.assertEqual(lock.read_text(), "another writer")
+
+    def test_failed_write_releases_own_lock(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lock = Path(directory) / "scanned-subscriptions.json.lock"
+            with self.assertRaisesRegex(ValueError, "failed write"):
+                with sub_store._file_lock(lock):
+                    raise ValueError("failed write")
+            self.assertFalse(lock.exists())
+            with sub_store._file_lock(lock):
+                self.assertTrue(lock.exists())
+            self.assertFalse(lock.exists())
 
 
 if __name__ == "__main__":

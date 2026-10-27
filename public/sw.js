@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subbot-v17';
+const CACHE_NAME = 'subbot-v18-security';
 const SHELL_ASSETS = [
   '/',
   '/app',
@@ -53,6 +53,8 @@ self.addEventListener('fetch', e => {
       url.pathname.startsWith('/decisions') ||
       url.pathname.startsWith('/gooddollar') ||
       url.pathname.startsWith('/audit') ||
+      url.pathname.startsWith('/analysis') ||
+      url.pathname.startsWith('/telemetry') ||
       url.pathname.startsWith('/export') ||
       url.pathname.startsWith('/budget') ||
       url.pathname.startsWith('/add-sub') ||

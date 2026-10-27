@@ -29,9 +29,9 @@ interface ICFAv1Forwarder {
  * Jars are keyed by wallet address (not by an off-chain userId), so nobody can
  * claim someone else's jars by front-running a first deposit.
  *
- * Streams: call setStreamSplit() before starting a flow and again before
- * changing it. Accrual uses the lower of the recorded and current flow rate, so
- * a rate the contract hasn't seen yet is never over-credited.
+ * Stream funding is disabled: sampling only the current rate cannot prove
+ * how much a wallet actually streamed between settlements. One-off deposits
+ * remain available. These entry points stay in the ABI for compatibility.
  */
 contract SubBotJars {
 
@@ -126,39 +126,13 @@ contract SubBotJars {
         emit CapSet(msg.sender, jarId, capPerPeriod);
     }
 
-    /// Set how an incoming G$ stream is split. Call before starting or changing the flow.
-    function setStreamSplit(uint256[] calldata jarIds, uint16[] calldata bps) external {
-        require(jarIds.length == bps.length && jarIds.length <= MAX_STREAM_JARS, "Bad input");
-        uint256 sum;
-        for (uint256 i; i < bps.length; i++) sum += bps[i];
-        require(sum <= 10000, "Split over 100%");
-        settle(msg.sender);
-        Stream storage s = streams[msg.sender];
-        s.jarIds      = jarIds;
-        s.bps         = bps;
-        s.rate        = _currentRate(msg.sender);
-        s.lastSettled = uint64(block.timestamp);
-        emit StreamSplitSet(msg.sender, jarIds, bps, s.rate);
+    /// Disabled until stream receipts can be attributed without trusting callers.
+    function setStreamSplit(uint256[] calldata, uint16[] calldata) external pure {
+        revert("Streaming is disabled");
     }
 
-    /// Credit streamed G$ to jars. Anyone may call it; it only moves accounting.
-    function settle(address who) public {
-        Stream storage s = streams[who];
-        if (s.lastSettled == 0) return;
-        int96 current = _currentRate(who);
-        int96 rate    = current < s.rate ? current : s.rate;
-        uint256 accrued = rate > 0 ? uint256(uint96(rate)) * (block.timestamp - s.lastSettled) : 0;
-        s.lastSettled = uint64(block.timestamp);
-        s.rate        = current;
-        if (accrued == 0) return;
-        uint256 given;
-        for (uint256 i; i < s.jarIds.length; i++) {
-            uint256 part = accrued * s.bps[i] / 10000;
-            jars[who][s.jarIds[i]].balance += part;
-            given += part;
-        }
-        unallocated[who] += accrued - given;
-        emit StreamSettled(who, accrued);
+    function settle(address) public pure {
+        // Never mint withdrawable credits from a sampled flow rate.
     }
 
     // ── Agent ────────────────────────────────────────────────────────────────
@@ -187,7 +161,7 @@ contract SubBotJars {
         uint256 balance, uint256 capPerPeriod, uint256 spentInPeriod, uint64 periodStart
     ) {
         Jar storage j = jars[who][jarId];
-        balance = j.balance + _pendingFor(who, jarId);
+        balance = j.balance;
         return (balance, j.capPerPeriod, j.spentInPeriod, j.periodStart);
     }
 
@@ -201,24 +175,4 @@ contract SubBotJars {
     function setAgent(address _agent) external onlyOwner { agent = _agent; }
     function setTreasury(address _treasury) external onlyOwner { treasury = _treasury; }
 
-    // ── Internal ─────────────────────────────────────────────────────────────
-
-    function _currentRate(address who) internal view returns (int96) {
-        if (address(forwarder) == address(0)) return 0;
-        int96 r = forwarder.getFlowrate(address(GD), who, address(this));
-        return r > 0 ? r : int96(0);
-    }
-
-    function _pendingFor(address who, uint256 jarId) internal view returns (uint256) {
-        Stream storage s = streams[who];
-        if (s.lastSettled == 0) return 0;
-        int96 current = _currentRate(who);
-        int96 rate    = current < s.rate ? current : s.rate;
-        if (rate <= 0) return 0;
-        uint256 accrued = uint256(uint96(rate)) * (block.timestamp - s.lastSettled);
-        for (uint256 i; i < s.jarIds.length; i++) {
-            if (s.jarIds[i] == jarId) return accrued * s.bps[i] / 10000;
-        }
-        return 0;
-    }
 }

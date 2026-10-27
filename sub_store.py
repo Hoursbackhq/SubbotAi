@@ -19,14 +19,14 @@ import time
 import contextlib
 from datetime import datetime
 from pathlib import Path
+from user_paths import user_path
 
-USER_DATA_DIR = Path.home() / ".hermes" / "user-data"
+USER_DATA_DIR = Path(os.environ.get("DATA_DIR") or Path.home() / ".hermes") / "user-data"
 
 # Fields the user can edit via the dashboard (PATCH /update-sub) — a rescan
 # must never clobber these, only the objective scan-derived fields below.
 USER_EDITABLE_FIELDS = ["status", "health_score", "use_case", "notes", "category"]
 
-LOCK_STALE_AFTER_S = 10
 LOCK_RETRY_INTERVAL_S = 0.05
 LOCK_TIMEOUT_S = 3
 
@@ -34,32 +34,27 @@ LOCK_TIMEOUT_S = 3
 @contextlib.contextmanager
 def _file_lock(lock_path: Path):
     """Exclusive-create lockfile — guards against a Node request and a Python
-    scan/import racing to write the same user's file at the same time. Steals
-    locks older than LOCK_STALE_AFTER_S so a crashed holder can't deadlock others."""
-    deadline = time.time() + LOCK_TIMEOUT_S
+    scan/import racing to write the same user's file at the same time. Never
+    steal an old lock: stop writers before clearing an abandoned lock."""
+    deadline = time.monotonic() + LOCK_TIMEOUT_S
     while True:
         try:
             fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-            os.close(fd)
             break
         except FileExistsError:
-            try:
-                if time.time() - lock_path.stat().st_mtime > LOCK_STALE_AFTER_S:
-                    lock_path.unlink(missing_ok=True)
-                    continue
-            except FileNotFoundError:
-                continue
-            if time.time() > deadline:
-                break  # proceed anyway rather than hang indefinitely
+            if time.monotonic() >= deadline:
+                raise TimeoutError("Storage is busy. Please try again shortly.")
             time.sleep(LOCK_RETRY_INTERVAL_S)
     try:
+        os.write(fd, f"{os.getpid()}\n".encode())
         yield
     finally:
-        lock_path.unlink(missing_ok=True)
+        os.close(fd)
+        lock_path.unlink()
 
 
 def load(user_id: str) -> dict:
-    file = USER_DATA_DIR / user_id / "scanned-subscriptions.json"
+    file = user_path(USER_DATA_DIR, user_id) / "scanned-subscriptions.json"
     if not file.exists():
         return {"subscriptions": [], "cancellation_history": [], "monthly_budget": None}
     with open(file) as f:
@@ -67,7 +62,7 @@ def load(user_id: str) -> dict:
 
 
 def save(user_id: str, db: dict):
-    out_dir = USER_DATA_DIR / user_id
+    out_dir = user_path(USER_DATA_DIR, user_id)
     out_dir.mkdir(parents=True, exist_ok=True)
     out_file = out_dir / "scanned-subscriptions.json"
     # Write to a temp file then rename — rename is atomic on the same filesystem,
@@ -126,9 +121,9 @@ def merge_all(user_id: str, new_records: list[dict], scanned_from: list[str] | N
     """Load the existing store, merge in new_records, save, and return the db.
     Locked end-to-end so two concurrent scans/imports for the same user can't
     lose an update to each other."""
-    out_dir = USER_DATA_DIR / user_id
+    out_dir = user_path(USER_DATA_DIR, user_id)
     out_dir.mkdir(parents=True, exist_ok=True)
-    lock_path = out_dir / ".scanned-subscriptions.json.lock"
+    lock_path = out_dir / "scanned-subscriptions.json.lock"
 
     with _file_lock(lock_path):
         db = load(user_id)

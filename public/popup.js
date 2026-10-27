@@ -1,3 +1,11 @@
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function safeHttpUrl(value) {
+  try { const url = new URL(value, location.origin); return ['https:', 'http:'].includes(url.protocol) ? url.href : '#'; }
+  catch (_) { return '#'; }
+}
+
 /* popup.js — SubBot Extension (view layer for @SubmanagerAgentBot) */
 
 // Local dev (localhost / LAN) talks to the server that served the page; everything else uses production.
@@ -34,7 +42,7 @@ const CELO_CHAIN = {
 };
 
 const CURRENCY_SYMBOLS = { USD:'$', EUR:'€', GBP:'£', NGN:'₦', KES:'KSh', GHS:'GH₵', ZAR:'R', 'G$':'G$', cUSD:'cUSD' };
-function cSym(code) { return CURRENCY_SYMBOLS[code] || code || '$'; }
+function cSym(code) { return Object.hasOwn(CURRENCY_SYMBOLS, code) ? CURRENCY_SYMBOLS[code] : '$'; }
 
 // ── Exchange Rates (cached 24h) ──────────────────────────────────────────
 let _fxRates = null;
@@ -104,9 +112,9 @@ function subFaviconUrl(sub) {
 
 function faviconImg(sub, sizeClass = 'w-10 h-10') {
   const url = subFaviconUrl(sub);
-  const initial = `<div class="${sizeClass} rounded-xl border border-edge grid place-items-center font-mono font-semibold text-main">${sub.name.charAt(0).toUpperCase()}</div>`;
-  if (!url) return initial;
-  return `<img src="${url}" alt="" class="${sizeClass} rounded-xl border border-edge bg-white object-contain p-1" onerror="this.outerHTML='<div class=\\'${sizeClass} rounded-xl border border-edge grid place-items-center font-mono font-semibold text-main\\'>${sub.name.charAt(0).toUpperCase()}</div>'"/>`;
+  const initial = escapeHtml(String(sub.name || '?').charAt(0).toUpperCase());
+  if (!url) return `<div class="${sizeClass} rounded-xl border border-edge grid place-items-center font-mono font-semibold text-main">${initial}</div>`;
+  return `<img src="${escapeHtml(url)}" alt="" class="${sizeClass} rounded-xl border border-edge bg-white object-contain p-1"/>`;
 }
 
 // ── Feature flag: set to true when GoodDollar Season 2 opens ─────────────
@@ -213,7 +221,13 @@ async function depositToCredits() {
   if (!provider || !from) { toast('Connect wallet first'); return; }
 
   const uid = userId();
-  const creditsAddr = CREDITS_CONTRACT;
+  if (uid === 'local') { toast('Sign in before depositing credits'); return; }
+  let creditsAddr;
+  try {
+    await ensureLinked(provider, from);
+    const registered = await post('/credits/register', {});
+    creditsAddr = registered.creditsAddress;
+  } catch (e) { toast(e.message || 'Could not verify the funding wallet'); return; }
   if (!creditsAddr) { toast('Credits contract not configured'); return; }
 
   const costWei = BigInt(Math.round(amount * 1e18));
@@ -1045,7 +1059,9 @@ document.addEventListener('click', e => {
     case 'showCsvImportModal': document.getElementById('modal-csv-import')?.classList.add('active'); track('action', { action: 'open_csv_import' }); break;
     case 'pickCsvFile':      document.getElementById('csv-import-file')?.click(); break;
     case 'runStatementImport': runStatementImport(); track('action', { action: 'run_statement_import' }); break;
-    case 'cancelSubscription': window.open(el.dataset.url, '_blank', 'noopener'); track('action', { action: 'cancel_subscription' }); break;
+    case 'confirmRenewal': confirmRenewal(el.dataset.subId); break;
+    case 'confirmCancellation': confirmCancellation(el.dataset.subId); break;
+    case 'cancelSubscription': window.open(safeHttpUrl(el.dataset.url), '_blank', 'noopener'); track('action', { action: 'cancel_subscription' }); break;
     case 'scanGmail':        runSettingsGmailScan(); break;
     case 'depositCredits':   depositToCredits(); track('action', { action: 'deposit_credits' }); break;
     case 'withdrawCredits':  withdrawCredits(); track('action', { action: 'withdraw_credits' }); break;
@@ -1186,11 +1202,11 @@ async function refreshDashboard() {
       const sym = cSym(s.currency);
       return `<div class="flex items-center gap-3 border border-due/40 bg-due/5 rounded-2xl px-3.5 py-3 mb-2">
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-semibold text-main truncate">${s.name}</p>
-          <p class="text-xs text-due">Renewal date passed · ${sym}${(s.monthly_cost || 0).toLocaleString()}/mo</p>
+          <p class="text-sm font-semibold text-main truncate">${escapeHtml(s.name)}</p>
+          <p class="text-xs text-due">Renewal date passed · ${escapeHtml(sym)}${escapeHtml((s.monthly_cost || 0).toLocaleString())}/mo</p>
         </div>
-        <button onclick="confirmRenewal('${s.id}')" class="btn-line px-3 py-2 text-xs">Renewed</button>
-        <button onclick="confirmCancellation('${s.id}')" class="px-3 py-2 rounded-full text-due text-xs font-semibold">Cancelled</button>
+        <button data-action="confirmRenewal" data-sub-id="${escapeHtml(s.id)}" class="btn-line px-3 py-2 text-xs">Renewed</button>
+        <button data-action="confirmCancellation" data-sub-id="${escapeHtml(s.id)}" class="px-3 py-2 rounded-full text-due text-xs font-semibold">Cancelled</button>
       </div>`;
     }).join('');
   }
@@ -1211,10 +1227,10 @@ async function refreshDashboard() {
     const days    = Math.ceil((new Date(s.next_renewal) - now) / 86400000);
     const when    = days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days}d`;
     const dateStr = new Date(s.next_renewal).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
-    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer" data-action="showSubDetail" data-sub-id="${s.id}">
+    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer" data-action="showSubDetail" data-sub-id="${escapeHtml(s.id)}">
       <span class="font-mono text-xs text-muted w-5">${String(i + 1).padStart(2, '0')}</span>
-      <div class="flex-1 min-w-0"><p class="text-[15px] font-medium text-main truncate">${s.name}</p><p class="font-mono text-xs ${days <= 3 ? 'text-due' : 'text-muted'}">${dateStr} · ${when}</p></div>
-      <span class="font-mono text-sm text-main">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
+      <div class="flex-1 min-w-0"><p class="text-[15px] font-medium text-main truncate">${escapeHtml(s.name)}</p><p class="font-mono text-xs ${days <= 3 ? 'text-due' : 'text-muted'}">${dateStr} · ${when}</p></div>
+      <span class="font-mono text-sm text-main">${cSym(s.currency)}${escapeHtml((s.monthly_cost || 0).toLocaleString())}</span>
     </div>`;
   }).join('');
 }
@@ -1253,13 +1269,13 @@ function renderSubs() {
     if (s.is_trial && s.trial_ends) tags.push(`<span class="text-due">trial ends ${fmtDate(s.trial_ends)}</span>`);
     if (!s.is_trial && s.price_changed_at) tags.push('<span class="text-due">price went up</span>');
     if (s.next_renewal) tags.push(`<span>renews ${fmtDate(s.next_renewal)}</span>`);
-    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer" data-action="showSubDetail" data-sub-id="${s.id}">
+    return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''} cursor-pointer" data-action="showSubDetail" data-sub-id="${escapeHtml(s.id)}">
       <div class="flex-shrink-0">${faviconImg(s)}</div>
       <div class="flex-1 min-w-0">
-        <p class="text-[15px] font-medium text-main truncate">${s.name}</p>
-        <p class="font-mono text-xs text-muted truncate">${(s.category || 'other').toLowerCase()}${tags.length ? ' · ' + tags.join(' · ') : ''}</p>
+        <p class="text-[15px] font-medium text-main truncate">${escapeHtml(s.name)}</p>
+        <p class="font-mono text-xs text-muted truncate">${escapeHtml((s.category || 'other').toLowerCase())}${tags.length ? ' · ' + tags.join(' · ') : ''}</p>
       </div>
-      <p class="font-mono text-sm text-main shrink-0">${cSym(s.currency)}${cost.toLocaleString()}<span class="text-muted">/mo</span></p>
+      <p class="font-mono text-sm text-main shrink-0">${cSym(s.currency)}${escapeHtml(cost.toLocaleString())}<span class="text-muted">/mo</span></p>
     </div>`;
   }).join('');
 }
@@ -1280,21 +1296,21 @@ function showSubDetail(id) {
   const renewal = sub.next_renewal ? fmt(sub.next_renewal) : '—';
   const cancelUrl = sub.cancel_url || `https://www.google.com/search?q=${encodeURIComponent(`how to cancel ${sub.name} subscription`)}`;
   const history = sub.price_history || [];
-  const row = (k, v, cls = 'text-main') => `<div class="flex justify-between py-2.5 rule-t"><span class="mono-label">${k}</span><span class="font-mono text-sm ${cls}">${v}</span></div>`;
+  const row = (k, v, cls = 'text-main') => `<div class="flex justify-between py-2.5 rule-t"><span class="mono-label">${escapeHtml(k)}</span><span class="font-mono text-sm ${cls}">${escapeHtml(v)}</span></div>`;
 
   const trialBanner = sub.is_trial && sub.trial_ends
-    ? `<p class="text-sm text-due border border-due/40 bg-due/5 rounded-xl p-3">Free trial ends ${fmt(sub.trial_ends)}. After that you'll be charged ${sym}${cost}/mo.</p>`
+    ? `<p class="text-sm text-due border border-due/40 bg-due/5 rounded-xl p-3">Free trial ends ${fmt(sub.trial_ends)}. After that you'll be charged ${escapeHtml(sym)}${escapeHtml(cost)}/mo.</p>`
     : '';
   const priceHistory = history.length
-    ? `<div><p class="mono-label mb-1">Price history</p>${history.map(h => row(h.date, `${cSym(h.currency)}${h.amount}/mo`, 'text-muted')).join('')}${row('Now', `${sym}${cost}/mo`)}</div>`
+    ? `<div><p class="mono-label mb-1">Price history</p>${history.map(h => row(h.date, `${cSym(h.currency)}${h.amount}/mo`, 'text-muted')).join('')}${row('Now', `${escapeHtml(sym)}${escapeHtml(cost)}/mo`)}</div>`
     : '';
 
   content.innerHTML = `
     <div class="flex items-center gap-3">
       ${faviconImg(sub, 'w-12 h-12')}
-      <div class="min-w-0"><h3 class="text-xl font-semibold text-main truncate">${sub.name}</h3><p class="text-sm text-muted">${sub.provider || sub.name}</p></div>
+      <div class="min-w-0"><h3 class="text-xl font-semibold text-main truncate">${escapeHtml(sub.name)}</h3><p class="text-sm text-muted">${escapeHtml(sub.provider || sub.name)}</p></div>
     </div>
-    <p class="display-num text-[40px] text-main">${sym}${cost.toLocaleString()}<span class="font-mono text-sm text-muted font-normal tracking-normal">/mo</span></p>
+    <p class="display-num text-[40px] text-main">${escapeHtml(sym)}${escapeHtml(cost.toLocaleString())}<span class="font-mono text-sm text-muted font-normal tracking-normal">/mo</span></p>
     ${trialBanner}
     <div>
       ${row('Renews', renewal)}
@@ -1304,8 +1320,8 @@ function showSubDetail(id) {
     </div>
     ${priceHistory}
     <div class="grid grid-cols-2 gap-2 pt-1">
-      <button data-action="draftEmail" data-service="${sub.name}" class="btn-line py-3 text-sm">Ask for a discount</button>
-      <button data-action="cancelSubscription" data-url="${cancelUrl}" class="btn-act py-3 text-sm">How to cancel</button>
+      <button data-action="draftEmail" data-service="${escapeHtml(sub.name)}" class="btn-line py-3 text-sm">Ask for a discount</button>
+      <button data-action="cancelSubscription" data-url="${escapeHtml(safeHttpUrl(cancelUrl))}" class="btn-act py-3 text-sm">How to cancel</button>
     </div>`;
   document.getElementById('modal-sub-detail')?.classList.add('active');
 }
@@ -1380,7 +1396,7 @@ async function runAudit(requirePayment = true) {
 
   const oDiv = document.getElementById('overlaps-list');
   oDiv.innerHTML = overlaps.length
-    ? overlaps.map(([cat, names], i) => `<div class="py-3 ${i ? 'rule-t' : ''}"><p class="text-main">${names.length} ${cat} tools doing similar jobs</p><p class="font-mono text-xs text-muted mt-0.5">${names.join(' · ')}</p></div>`).join('')
+    ? overlaps.map(([cat, names], i) => `<div class="py-3 ${i ? 'rule-t' : ''}"><p class="text-main">${names.length} ${escapeHtml(cat)} tools doing similar jobs</p><p class="font-mono text-xs text-muted mt-0.5">${escapeHtml(names.join(' · '))}</p></div>`).join('')
     : '<p class="text-sm text-muted">No overlapping subscriptions found.</p>';
 
   const rows = document.getElementById('health-rows');
@@ -1388,9 +1404,9 @@ async function runAudit(requirePayment = true) {
     const h = s.health_score || 0;
     const verdict = h >= 80 ? ['keep', 'text-ok'] : h >= 50 ? ['review', 'text-main'] : ['cancel', 'text-due'];
     return `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''}">
-      <span class="text-[15px] text-main truncate flex-1">${s.name}</span>
-      <span class="font-mono text-sm text-main">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
-      <span class="font-mono text-xs w-20 text-right ${verdict[1]}">${h} · ${verdict[0]}</span>
+      <span class="text-[15px] text-main truncate flex-1">${escapeHtml(s.name)}</span>
+      <span class="font-mono text-sm text-main">${cSym(s.currency)}${escapeHtml((s.monthly_cost || 0).toLocaleString())}</span>
+      <span class="font-mono text-xs w-20 text-right ${verdict[1]}">${escapeHtml(h)} · ${verdict[0]}</span>
     </div>`;
   }).join('') || '<p class="text-sm text-muted py-3">No services to audit yet.</p>';
 
@@ -1404,7 +1420,7 @@ async function runAudit(requirePayment = true) {
 
   const qd = document.getElementById('quick-wins');
   qd.innerHTML = wins.length
-    ? wins.map((w, i) => `<div class="flex gap-3 py-3 ${i ? 'rule-t' : ''}"><span class="font-mono text-xs text-primary pt-0.5">${String(i + 1).padStart(2, '0')}</span><p class="text-main">${w}</p></div>`).join('')
+    ? wins.map((w, i) => `<div class="flex gap-3 py-3 ${i ? 'rule-t' : ''}"><span class="font-mono text-xs text-primary pt-0.5">${String(i + 1).padStart(2, '0')}</span><p class="text-main">${escapeHtml(w)}</p></div>`).join('')
     : '<p class="text-sm text-muted">Nothing to cut right now.</p>';
 }
 
@@ -1425,8 +1441,8 @@ function renderAlerts() {
       const when = days <= 0 ? 'today' : days === 1 ? 'tomorrow' : `in ${days} days`;
       return `<div class="flex items-center gap-4 py-3 ${i ? 'rule-t' : ''}">
         <div class="w-10 text-center shrink-0"><p class="font-mono text-[11px] uppercase text-muted">${d.toLocaleString('en-GB', { month: 'short' })}</p><p class="display-num text-2xl ${days <= 3 ? 'text-due' : 'text-main'}">${d.getDate()}</p></div>
-        <div class="flex-1 min-w-0"><p class="text-[15px] text-main truncate">${s.name}</p><p class="font-mono text-xs ${days <= 3 ? 'text-due' : 'text-muted'}">renews ${when}</p></div>
-        <span class="font-mono text-sm text-main">${cSym(s.currency)}${(s.monthly_cost || 0).toLocaleString()}</span>
+        <div class="flex-1 min-w-0"><p class="text-[15px] text-main truncate">${escapeHtml(s.name)}</p><p class="font-mono text-xs ${days <= 3 ? 'text-due' : 'text-muted'}">renews ${when}</p></div>
+        <span class="font-mono text-sm text-main">${cSym(s.currency)}${escapeHtml((s.monthly_cost || 0).toLocaleString())}</span>
       </div>`;
     }).join('');
   }
@@ -1437,8 +1453,8 @@ function renderAlerts() {
   neg.innerHTML = eligible.length
     ? eligible.map((s, i) => `<div class="flex items-center gap-3 py-3 ${i ? 'rule-t' : ''}">
         ${faviconImg(s)}
-        <div class="flex-1 min-w-0"><p class="text-[15px] text-main truncate">${s.name}</p><p class="font-mono text-xs text-muted">may offer a retention discount</p></div>
-        <button data-action="draftEmail" data-service="${s.name}" class="btn-line px-3.5 py-2 text-xs shrink-0">Draft email</button>
+        <div class="flex-1 min-w-0"><p class="text-[15px] text-main truncate">${escapeHtml(s.name)}</p><p class="font-mono text-xs text-muted">may offer a retention discount</p></div>
+        <button data-action="draftEmail" data-service="${escapeHtml(s.name)}" class="btn-line px-3.5 py-2 text-xs shrink-0">Draft email</button>
       </div>`).join('')
     : '<p class="text-sm text-muted">Everything looks fairly priced.</p>';
 }
@@ -1514,7 +1530,7 @@ function renderTxHistory() {
     return `<div class="flex items-center justify-between p-3 rounded-xl bg-panel border border-edge">
       <div class="flex items-center gap-3">
         <div class="w-8 h-8 rounded-lg bg-cyan-500/10 flex items-center justify-center"><i class="fa-solid ${icon} text-primary text-sm"></i></div>
-        <div><p class="text-xs font-medium">${label}</p><p class="text-[10px] text-muted font-mono">${date}</p></div>
+        <div><p class="text-xs font-medium">${escapeHtml(label)}</p><p class="text-[10px] text-muted font-mono">${date}</p></div>
       </div>
       <span class="text-xs font-mono font-bold ${amtColor}">${amt}</span>
     </div>`;
@@ -1889,8 +1905,8 @@ function showScanConfirmModal(found) {
       <input type="checkbox" value="${i}" ${!alreadyExists && s.status !== 'cancelled' ? 'checked' : ''} class="w-5 h-5 accent-[rgb(var(--act))] flex-shrink-0"/>
       ${faviconImg(s, 'w-9 h-9')}
       <div class="flex-1 min-w-0">
-        <p class="text-[15px] text-main truncate">${s.name}</p>
-        <p class="font-mono text-xs text-muted">${cost}/mo · ${statusBadge}${dupBadge ? ' · ' + dupBadge : ''}</p>
+        <p class="text-[15px] text-main truncate">${escapeHtml(s.name)}</p>
+        <p class="font-mono text-xs text-muted">${escapeHtml(cost)}/mo · ${statusBadge}${dupBadge ? ' · ' + dupBadge : ''}</p>
       </div>
     </label>`;
   }).join('');

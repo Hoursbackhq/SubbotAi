@@ -45,12 +45,13 @@ test('verifySessionToken rejects garbage input', () => {
   assert.equal(verifySessionToken('not.enough.parts.here'), null);
 });
 
-test('requireSession allows the anonymous local userId with no token', () => {
+test('requireSession rejects the anonymous local userId with no token', () => {
   const req = mockReq({ body: { userId: 'local' } });
   const res = mockRes();
   let nextCalled = false;
   requireSession(req, res, () => { nextCalled = true; });
-  assert.equal(nextCalled, true);
+  assert.equal(nextCalled, false);
+  assert.equal(res.statusCode, 401);
 });
 
 test('requireSession rejects a request with no token for a real userId', () => {

@@ -8,7 +8,8 @@
 require('./load-env');
 const express = require('express');
 const cors    = require('cors');
-const { exec, spawn } = require('child_process');
+const { runPython } = require('./run-python');
+const runTask = require('./task-limits').createTaskLimiter();
 const fs      = require('fs');
 const path    = require('path');
 const https   = require('https');
@@ -83,10 +84,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // ── Helpers ────────────────────────────────────────────────────────────────
 
 function userDir(userId = 'local') {
-  // userId flows into a filesystem path — strip anything that isn't part of
-  // the established w3a:/telegram-numeric formats to block path traversal.
-  const safe = String(userId).replace(/[^a-zA-Z0-9:_.\-]/g, '_');
-  const d = path.join(USER_DATA, safe);
+  const d = require('./user-path').userPath(USER_DATA, userId);
   if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
   return d;
 }
@@ -117,47 +115,8 @@ function writeJSON(file, data) {
   fs.renameSync(tmp, file);
 }
 
-const LOCK_STALE_AFTER_MS = 10000;
-const LOCK_RETRY_MS       = 50;
-const LOCK_TIMEOUT_MS     = 3000;
-
-// Exclusive-create lockfile shared with sub_store.py's _file_lock — guards
-// read-modify-write endpoints against a Python scan/import process writing
-// the same user's file at the same moment.
-async function withFileLock(file, fn) {
-  const lockPath = `${file}.lock`;
-  const deadline = Date.now() + LOCK_TIMEOUT_MS;
-  for (;;) {
-    try {
-      fs.closeSync(fs.openSync(lockPath, 'wx'));
-      break;
-    } catch (e) {
-      if (e.code !== 'EEXIST') throw e;
-      try {
-        if (Date.now() - fs.statSync(lockPath).mtimeMs > LOCK_STALE_AFTER_MS) {
-          fs.unlinkSync(lockPath);
-          continue;
-        }
-      } catch (_) { continue; }
-      if (Date.now() > deadline) break; // proceed anyway rather than hang indefinitely
-      await new Promise(r => setTimeout(r, LOCK_RETRY_MS));
-    }
-  }
-  try {
-    return await fn();
-  } finally {
-    try { fs.unlinkSync(lockPath); } catch (_) {}
-  }
-}
-
-function runPy(cmd) {
-  return new Promise((resolve, reject) => {
-    exec(`python3 ${HERMES_HOME}/${cmd}`, { timeout: 60000 }, (err, stdout, stderr) => {
-      if (err) reject({ error: err.message, stderr });
-      else resolve(stdout);
-    });
-  });
-}
+const { withFileLock } = require('./file-lock');
+const { asyncRoute, storageErrorHandler } = require('./http-errors');
 
 // cUSD balance via Celo JSON-RPC (eth_call for ERC-20 balanceOf)
 function celoRPC(method, params) {
@@ -190,7 +149,8 @@ async function getCUSDBalance(address) {
 
 // ── Web3Auth JWT verification ──────────────────────────────────────────────
 
-const WEB3AUTH_JWKS_URI = 'https://api-auth.web3auth.io/.well-known/jwks.json';
+const WEB3AUTH_JWKS_URI = process.env.WEB3AUTH_JWKS_URI || 'https://api-auth.web3auth.io/jwks';
+const WEB3AUTH_ISSUER = process.env.WEB3AUTH_ISSUER || 'https://api-auth.web3auth.io';
 const WEB3AUTH_CLIENT_ID = 'BCkzpmFTjh9pTHe7LGNlrg_jo22W7DNHGkkZSbgrQlOeSf7AzRZ1qdZXDRyxplEq5knOTiCjhH-uga6tpnASP1o';
 
 let jwksCache = null;
@@ -233,7 +193,8 @@ async function verifyWeb3AuthJWT(idToken) {
   const payload = parseJWTPayload(idToken);
   const keys    = await fetchJWKS();
 
-  const jwk = keys.find(k => k.kid === header.kid) || keys[0];
+  if (!['RS256', 'ES256'].includes(header.alg) || typeof header.kid !== 'string') throw new Error('Unsupported JWT header');
+  const jwk = keys.find(k => k.kid === header.kid);
   if (!jwk) throw new Error('No matching JWK found');
 
   // Build PEM from JWK
@@ -244,15 +205,19 @@ async function verifyWeb3AuthJWT(idToken) {
 
   const verify = createVerify(header.alg === 'RS256' ? 'RSA-SHA256' : 'SHA256');
   verify.update(data);
-  const valid = verify.verify(publicKey, sig);
+  if ((header.alg === 'RS256' && jwk.kty !== 'RSA') || (header.alg === 'ES256' && jwk.kty !== 'EC')) throw new Error('JWT key type mismatch');
+  const valid = verify.verify(header.alg === 'ES256' ? { key: publicKey, dsaEncoding: 'ieee-p1363' } : publicKey, sig);
   if (!valid) throw new Error('JWT signature verification failed');
 
   // Check expiry
-  if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+  if (!Number.isFinite(payload.exp) || payload.exp <= Math.floor(Date.now() / 1000)) {
     throw new Error('JWT has expired');
   }
 
+  if (payload.nbf !== undefined && (!Number.isFinite(payload.nbf) || payload.nbf > Math.floor(Date.now() / 1000))) throw new Error('JWT not active');
+
   // Check audience contains our client ID
+  if (payload.iss !== WEB3AUTH_ISSUER) throw new Error('JWT issuer mismatch');
   const aud = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
   if (!aud.includes(WEB3AUTH_CLIENT_ID)) {
     throw new Error('JWT audience mismatch');
@@ -270,12 +235,15 @@ app.get('/health', (req, res) => res.json({ ok: true, version: '1.0' }));
 // The extension calls this after login to validate the idToken using JWKS.
 // Returns a stable userId (verifier:verifierId) for data isolation.
 app.post('/auth/verify-web3auth', async (req, res) => {
-  const { idToken, verifier, verifierId } = req.body;
+  const { idToken } = req.body;
   if (!idToken) return res.status(400).json({ error: 'idToken required' });
 
   try {
     const payload = await verifyWeb3AuthJWT(idToken);
-    const userId  = `w3a:${verifier || payload.verifier || 'unknown'}:${verifierId || payload.verifierId || payload.sub}`;
+    const verifier = payload.verifier || payload.groupedAuthConnectionId || payload.authConnectionId || payload.authConnection;
+    const verifierId = payload.verifierId || payload.userId || payload.sub;
+    if (typeof verifier !== 'string' || !verifier || typeof verifierId !== 'string' || !verifierId || verifier.length > 100 || verifierId.length > 512) throw new Error('JWT identity missing or invalid');
+    const userId = `w3a:${verifier}:${verifierId}`;
 
     // Create user directory and record first-seen timestamp if new
     const dir      = userDir(userId);
@@ -284,8 +252,8 @@ app.post('/auth/verify-web3auth', async (req, res) => {
     if (!existing) {
       writeJSON(metaFile, {
         userId,
-        verifier: verifier || payload.verifier,
-        verifierId: verifierId || payload.verifierId || payload.sub,
+        verifier,
+        verifierId,
         email: payload.email || '',
         firstSeenAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -359,13 +327,13 @@ app.post('/auth/verify-wallet', (req, res) => {
 });
 
 // Bulk sync — bot pushes full data file to Railway after every update
-app.post('/sync', requireSession, (req, res) => {
+app.post('/sync', requireSession, asyncRoute(async (req, res) => {
   const { userId = 'local', data } = req.body;
   if (!data) return res.status(400).json({ error: 'data required' });
   const file = path.join(userDir(userId), 'scanned-subscriptions.json');
-  writeJSON(file, data);
+  await withFileLock(file, () => writeJSON(file, data));
   res.json({ ok: true, count: (data.subscriptions || []).length });
-});
+}));
 
 // Get subscriptions
 app.get('/subs', requireSession, (req, res) => {
@@ -377,7 +345,7 @@ app.get('/subs', requireSession, (req, res) => {
 });
 
 // Add a single subscription (from extension manual add)
-app.post('/add-sub', requireSession, async (req, res) => {
+app.post('/add-sub', requireSession, asyncRoute(async (req, res) => {
   const { sub, userId = 'local' } = req.body;
   if (!sub || !sub.name) return res.status(400).json({ error: 'sub.name required' });
   const file = path.join(userDir(userId), 'scanned-subscriptions.json');
@@ -390,10 +358,10 @@ app.post('/add-sub', requireSession, async (req, res) => {
     return data.subscriptions.length;
   });
   res.json({ ok: true, count });
-});
+}));
 
 // Delete a subscription
-app.post('/delete-sub', requireSession, async (req, res) => {
+app.post('/delete-sub', requireSession, asyncRoute(async (req, res) => {
   const { subId, userId = 'local' } = req.body;
   if (!subId) return res.status(400).json({ error: 'subId required' });
   const file = path.join(userDir(userId), 'scanned-subscriptions.json');
@@ -404,10 +372,10 @@ app.post('/delete-sub', requireSession, async (req, res) => {
     return data.subscriptions.length;
   });
   res.json({ ok: true, count });
-});
+}));
 
 // Update a subscription
-app.post('/update-sub', requireSession, async (req, res) => {
+app.post('/update-sub', requireSession, asyncRoute(async (req, res) => {
   const { sub, userId = 'local' } = req.body;
   if (!sub || !sub.id) return res.status(400).json({ error: 'sub.id required' });
   const file = path.join(userDir(userId), 'scanned-subscriptions.json');
@@ -418,7 +386,7 @@ app.post('/update-sub', requireSession, async (req, res) => {
     return data.subscriptions.length;
   });
   res.json({ ok: true, count });
-});
+}));
 
 // Scan Gmail inbox. Off until the Google review is done; the web app shows it as coming soon.
 app.post('/scan', requireSession, async (req, res) => {
@@ -426,32 +394,14 @@ app.post('/scan', requireSession, async (req, res) => {
   const { email, password, userId = 'local' } = req.body;
   if (!email || !password) return res.status(400).json({ error: 'email and password required' });
   try {
-    // Use spawn() + stdin so password never appears in process args (invisible to `ps`)
-    const out = await new Promise((resolve, reject) => {
-      const child = spawn('python3', [
-        path.join(HERMES_HOME, 'gmail-scanner.py'),
-        '--email', email,
-        '--user-id', userId,
-      ], { timeout: 120000 });
-      // Send password via stdin as JSON array
-      child.stdin.write(JSON.stringify([password]));
-      child.stdin.end();
-      let stdout = '', stderr = '';
-      child.stdout.on('data', d => stdout += d);
-      child.stderr.on('data', d => stderr += d);
-      child.on('close', code => {
-        if (code !== 0) reject({ error: stderr || `exit code ${code}` });
-        else resolve(stdout);
-      });
-      child.on('error', err => reject({ error: err.message }));
-    });
+    await runTask(userId, () => runPython('gmail-scanner.py', ['--email', email, '--user-id', userId], { input: JSON.stringify([password]), timeout: 120000 }));
     const file = path.join(userDir(userId), 'scanned-subscriptions.json');
     const data = readJSON(file);
     res.json(data || { subscriptions: [] });
   } catch(e) {
     // Sanitize error — never leak credentials
     const safeError = (e.error || 'Scan failed').replace(/[^\s]{16,}/g, '***');
-    res.status(500).json({ error: safeError });
+    res.status(e.status || 500).json({ error: safeError });
   }
 });
 
@@ -460,27 +410,12 @@ app.post('/import-statement', requireSession, async (req, res) => {
   const { csvText, userId = 'local' } = req.body;
   if (!csvText) return res.status(400).json({ error: 'csvText required' });
   try {
-    const out = await new Promise((resolve, reject) => {
-      const child = spawn('python3', [
-        path.join(HERMES_HOME, 'statement-scanner.py'),
-        '--user-id', userId,
-      ], { timeout: 60000 });
-      child.stdin.write(csvText);
-      child.stdin.end();
-      let stdout = '', stderr = '';
-      child.stdout.on('data', d => stdout += d);
-      child.stderr.on('data', d => stderr += d);
-      child.on('close', code => {
-        if (code !== 0) reject({ error: stderr || `exit code ${code}` });
-        else resolve(stdout);
-      });
-      child.on('error', err => reject({ error: err.message }));
-    });
+    await runTask(userId, () => runPython('statement-scanner.py', ['--user-id', userId], { input: csvText }));
     const file = path.join(userDir(userId), 'scanned-subscriptions.json');
     const data = readJSON(file);
     res.json(data || { subscriptions: [] });
   } catch(e) {
-    res.status(500).json({ error: e.error || 'Statement import failed' });
+    res.status(e.status || 500).json({ error: 'Statement import failed or task limit reached' });
   }
 });
 
@@ -501,15 +436,17 @@ app.post('/audit', requireSession, async (req, res) => {
     }
   }
 
-  // Run LLM analysis in background — return basic summary immediately,
-  // full results available via GET /analysis once complete
+  // Keep the per-user task slot until analysis completes.
   const subs    = (data.subscriptions || []).filter(s => s.status === 'active');
   const monthly = subs.reduce((sum, s) => sum + (s.monthly_cost || 0), 0);
 
-  // Fire off LLM analysis asynchronously
-  runPy(`llm-analyze.py --user-id ${userId}`)
-    .then(() => console.log(`[audit] LLM analysis complete for ${userId}`))
-    .catch(e  => console.warn(`[audit] LLM analysis failed: ${e.error}`));
+  try {
+    await runTask(userId, () => runPython('llm-analyze.py', ['--user-id', userId]));
+    const result = readJSON(analysisFile);
+    if (result) return res.json({ ...result, source: 'llm' });
+  } catch (e) {
+    return res.status(e.status || 502).json({ error: e.status ? e.message : 'Analysis failed' });
+  }
 
   res.json({
     monthly,
@@ -517,7 +454,7 @@ app.post('/audit', requireSession, async (req, res) => {
     subs,
     budget:   data.monthly_budget,
     source:   'basic',
-    message:  'Full LLM analysis running — check GET /analysis in a few seconds',
+    message: 'Analysis completed without a saved result',
   });
 });
 
@@ -534,7 +471,7 @@ app.get('/analysis', requireSession, (req, res) => {
 app.post('/export', requireSession, async (req, res) => {
   const { userId = 'local' } = req.body;
   try {
-    await runPy(`export.py --user-id ${userId}`);
+    await runTask(userId, () => runPython('export.py', ['--user-id', userId]));
     res.json({ ok: true, message: 'CSV exported' });
   } catch(e) {
     // Fallback — return CSV data for browser download
@@ -572,9 +509,9 @@ app.post('/negotiate', requireSession, async (req, res) => {
   // If we have full context, run LLM negotiation script
   if (sub && process.env.OPENAI_API_KEY) {
     try {
-      const out = await runPy(
-        `negotiate.py --user-id ${userId} --service "${serviceName}"`
-      );
+      const out = await runTask(userId, () => runPython(
+        'negotiate.py', ['--user-id', userId, '--service', serviceName]
+      ));
       const result = JSON.parse(out.trim());
       return res.json(result);
     } catch (_) {
@@ -795,7 +732,7 @@ app.get('/balance', async (req, res) => {
 });
 
 // Record credit deduction
-app.post('/deduct', requireSession, async (req, res) => {
+app.post('/deduct', requireSession, asyncRoute(async (req, res) => {
   const { action, cost, walletAddress, userId = 'local' } = req.body;
   const file = path.join(userDir(userId), 'credits.json');
   await withFileLock(file, () => {
@@ -805,7 +742,7 @@ app.post('/deduct', requireSession, async (req, res) => {
     writeJSON(file, ledger);
   });
   res.json({ ok: true });
-});
+}));
 
 // Get credit history
 app.get('/history', requireSession, (req, res) => {
@@ -815,7 +752,7 @@ app.get('/history', requireSession, (req, res) => {
 });
 
 // Save budget
-app.post('/budget', requireSession, async (req, res) => {
+app.post('/budget', requireSession, asyncRoute(async (req, res) => {
   const { budget, budgetCurrency, userId = 'local' } = req.body;
   const file = path.join(userDir(userId), 'scanned-subscriptions.json');
   const finalCurrency = await withFileLock(file, () => {
@@ -826,171 +763,25 @@ app.post('/budget', requireSession, async (req, res) => {
     return data.budget_currency;
   });
   res.json({ ok: true, budget, budgetCurrency: finalCurrency });
-});
+}));
 
 // ── Telemetry ──────────────────────────────────────────────────────────────
-const TELE_FILE = path.join(HERMES_HOME, 'telemetry.ndjson');
-const TELE_KEY  = process.env.TELEMETRY_KEY || '';
-if (!TELE_KEY) console.warn('[SubBot] TELEMETRY_KEY not set — /telemetry/stats will reject all requests until it is configured.');
-const teleEvents = [];
-const userMap    = {}; // userId → { email, subCount, sessions, lastSeen, pwa, loginCount }
-
-// Load last 5000 persisted events on startup
-try {
-  if (fs.existsSync(TELE_FILE)) {
-    const lines = fs.readFileSync(TELE_FILE, 'utf8').trim().split('\n').filter(Boolean);
-    lines.slice(-5000).forEach(l => {
-      try {
-        const e = JSON.parse(l);
-        teleEvents.push(e);
-        if (e.event === 'login' && e.userId) {
-          if (!userMap[e.userId]) userMap[e.userId] = { email: '', subCount: 0, sessions: new Set(), loginCount: 0, lastSeen: 0, pwa: false };
-          if (e.email) userMap[e.userId].email = e.email;
-          userMap[e.userId].sessions.add(e.session);
-          userMap[e.userId].loginCount++;
-          if (e.ts > userMap[e.userId].lastSeen) { userMap[e.userId].lastSeen = e.ts; userMap[e.userId].pwa = e.pwa; }
-        }
-        if (e.event === 'subs_loaded' && e.userId) {
-          if (!userMap[e.userId]) userMap[e.userId] = { email: '', subCount: 0, sessions: new Set(), loginCount: 0, lastSeen: 0, pwa: false };
-          userMap[e.userId].subCount = e.count || 0;
-        }
-      } catch (_) {}
-    });
-    console.log(`[SubBot] Telemetry loaded: ${teleEvents.length} events, ${Object.keys(userMap).length} users`);
-  }
-} catch (_) {}
-
-app.post('/telemetry', (req, res) => {
-  const { event, screen, action, session, theme, pwa, email, userId, count } = req.body || {};
-  if (!event) return res.status(400).json({ error: 'missing event' });
-  const entry = {
-    event, screen: screen || null, action: action || null,
-    session: session || 'anon', theme: theme || 'dark', pwa: !!pwa,
-    email: email || null, userId: userId || null, count: count ?? null,
-    ua: (req.headers['user-agent'] || '').slice(0, 200),
-    ip: (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || req.ip,
-    ts: Date.now()
-  };
-  teleEvents.push(entry);
-  if (teleEvents.length > 10000) teleEvents.shift();
-  fs.appendFile(TELE_FILE, JSON.stringify(entry) + '\n', () => {});
-
-  // Update user registry
-  if (event === 'login' && userId) {
-    if (!userMap[userId]) userMap[userId] = { email: '', subCount: 0, sessions: new Set(), loginCount: 0, lastSeen: 0, pwa: false };
-    if (email) userMap[userId].email = email;
-    userMap[userId].sessions.add(session || 'anon');
-    userMap[userId].loginCount++;
-    userMap[userId].lastSeen = entry.ts;
-    userMap[userId].pwa = !!pwa;
-  }
-  if (event === 'subs_loaded' && userId) {
-    if (!userMap[userId]) userMap[userId] = { email: '', subCount: 0, sessions: new Set(), loginCount: 0, lastSeen: 0, pwa: false };
-    userMap[userId].subCount = count || 0;
-    if (entry.ts > userMap[userId].lastSeen) userMap[userId].lastSeen = entry.ts;
-  }
-
-  res.json({ ok: true });
-});
-
-app.get('/telemetry/stats', (req, res) => {
-  if (!TELE_KEY || req.query.key !== TELE_KEY) return res.status(401).send('Unauthorized');
-  const now = Date.now();
-  const DAY = 86400000;
-  const e1d = teleEvents.filter(e => now - e.ts < DAY);
-  const e7d = teleEvents.filter(e => now - e.ts < 7 * DAY);
-
-  const countBy = (arr, fn) => {
-    const m = {};
-    arr.forEach(e => { const k = fn(e); if (k) m[k] = (m[k] || 0) + 1; });
-    return Object.entries(m).sort((a, b) => b[1] - a[1]);
-  };
-
-  const daily = {};
-  e7d.forEach(e => {
-    const d = new Date(e.ts).toISOString().slice(0, 10);
-    if (!daily[d]) daily[d] = new Set();
-    daily[d].add(e.session);
-  });
-  const dailyRows = Object.entries(daily).sort().map(([date, s]) => [date, s.size]);
-
-  const screens = countBy(teleEvents.filter(e => e.event === 'screen_view'), e => e.screen);
-  const actions = countBy(teleEvents.filter(e => e.event === 'action'), e => e.action);
-  const users   = Object.entries(userMap)
-    .map(([uid, u]) => ({ uid, email: u.email || '—', subCount: u.subCount, sessions: u.sessions.size, loginCount: u.loginCount, lastSeen: u.lastSeen, pwa: u.pwa }))
-    .sort((a, b) => b.lastSeen - a.lastSeen);
-
-  const fmt = ts => ts ? new Date(ts).toISOString().replace('T', ' ').slice(0, 16) + ' UTC' : '—';
-  const row = (...cells) => `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
-  const tbl = (heads, rows) => `<table><thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
-
-  const stat = (label, val) => `<div class="card"><div class="val">${val}</div><div class="lbl">${label}</div></div>`;
-
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
-<title>SubBot Analytics</title>
-<style>
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,sans-serif;background:#0a0a0a;color:#f0f0f0;padding:24px}
-  h1{font-size:20px;font-weight:700;margin-bottom:20px;color:#34d399}
-  h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#888;margin:28px 0 10px}
-  .stats{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px}
-  .card{background:#1c1c1c;border:1px solid #2a2a2a;border-radius:10px;padding:14px 18px;min-width:120px}
-  .card .val{font-size:26px;font-weight:700;color:#34d399;font-variant-numeric:tabular-nums}
-  .card .lbl{font-size:11px;color:#888;margin-top:4px;text-transform:uppercase;letter-spacing:.06em}
-  table{width:100%;border-collapse:collapse;font-size:13px;background:#1c1c1c;border-radius:10px;overflow:hidden}
-  th{background:#242424;padding:9px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;font-weight:600}
-  td{padding:9px 14px;border-top:1px solid #2a2a2a;color:#e0e0e0}
-  tr:hover td{background:#242424}
-  .badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase}
-  .pwa{background:#34d399/20;color:#34d399;border:1px solid #34d399}
-  .web{background:#1c1c1c;color:#888;border:1px solid #2a2a2a}
-</style></head><body>
-<h1>SubBot Analytics</h1>
-<div class="stats">
-  ${stat('Total Events', teleEvents.length)}
-  ${stat('Sessions Today', new Set(e1d.map(e=>e.session)).size)}
-  ${stat('Sessions 7d', new Set(e7d.map(e=>e.session)).size)}
-  ${stat('Unique IPs Today', new Set(e1d.map(e=>e.ip)).size)}
-  ${stat('Registered Users', users.length)}
-  ${stat('Logins Today', e1d.filter(e=>e.event==='login').length)}
-</div>
-
-<h2>Users</h2>
-${tbl(['Email','Subs Tracked','Sessions','Logins','Last Seen','Client'],
-  users.map(u => row(
-    u.email,
-    u.subCount,
-    u.sessions,
-    u.loginCount,
-    fmt(u.lastSeen),
-    `<span class="badge ${u.pwa?'pwa':'web'}">${u.pwa?'PWA':'Browser'}</span>`
-  ))
-)}
-
-<h2>Screen Views</h2>
-${tbl(['Screen','Views'], screens.map(([s,c]) => row(s,c)))}
-
-<h2>Actions</h2>
-${tbl(['Action','Count'], actions.map(([a,c]) => row(a,c)))}
-
-<h2>Daily Sessions (7d)</h2>
-${tbl(['Date','Sessions'], dailyRows.map(([d,c]) => row(d,c)))}
-
-<p style="margin-top:24px;font-size:11px;color:#444">Last updated: ${fmt(now)}</p>
-</body></html>`;
-
-  res.setHeader('Content-Type', 'text/html');
-  res.send(html);
-});
+app.use(require('./telemetry').createTelemetryRouter({
+  file: path.join(HERMES_HOME, 'telemetry.ndjson'),
+  key: process.env.TELEMETRY_KEY || '',
+}));
 
 // ── Bills, jars and data (bills.js) ───────────────────────────────────────
 app.use(require('./bills').createBillsRouter({
   userDir, readJSON, writeJSON, withFileLock, requireSession, requireInternalToken,
   provider: new ethers.JsonRpcProvider('https://forno.celo.org'),
   getJarsContract: () => jarsContract,
+  getCreditsContract: () => creditsContract,
   getAutopay: () => gdAutopay,
   usedTxFile: path.join(HERMES_HOME, 'bills-used-tx.json'),
 }));
+
+app.use(storageErrorHandler);
 
 // ── Start ──────────────────────────────────────────────────────────────────
 app.listen(PORT, '0.0.0.0', () => {

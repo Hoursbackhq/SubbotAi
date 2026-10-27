@@ -20,6 +20,7 @@ import argparse
 import urllib.request
 from datetime import date, datetime
 from pathlib import Path
+from user_paths import user_path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import load_env
@@ -28,21 +29,21 @@ load_env.load_hermes_env()
 API_KEY               = os.getenv("OPENAI_API_KEY", "")
 API_BASE              = os.getenv("OPENAI_BASE_URL", "https://inference-api.nousresearch.com/v1")
 MODEL                 = os.getenv("LLM_MODEL", "NousResearch/Hermes-3-Llama-3.1-70B")
-USER_DATA_DIR         = Path.home() / ".hermes" / "user-data"
+USER_DATA_DIR         = Path(os.environ.get("DATA_DIR") or Path.home() / ".hermes") / "user-data"
 BRIDGE_URL            = os.getenv("BRIDGE_URL", "http://localhost:3747")
 INTERNAL_SERVICE_TOKEN = os.getenv("INTERNAL_SERVICE_TOKEN", "")
 
 
 def load_user_context(user_id: str) -> tuple[dict, dict | None]:
     """Returns (subscriptions_data, llm_analysis_or_None)"""
-    sub_file = USER_DATA_DIR / user_id / "scanned-subscriptions.json"
+    sub_file = user_path(USER_DATA_DIR, user_id) / "scanned-subscriptions.json"
     data     = {}
     if sub_file.exists():
         with open(sub_file) as f:
             data = json.load(f)
 
     analysis = None
-    analysis_file = USER_DATA_DIR / user_id / "llm-analysis.json"
+    analysis_file = user_path(USER_DATA_DIR, user_id) / "llm-analysis.json"
     if analysis_file.exists():
         with open(analysis_file) as f:
             analysis = json.load(f)
