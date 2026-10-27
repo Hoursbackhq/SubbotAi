@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>SubBot · Pay your bills with G$</title>
-<meta name="description" content="SubBot tracks your subscriptions and pays airtime, data, electricity and TV from your GoodDollar wallet. Set money aside in jars and bills pay themselves on the due day."/>
-<meta property="og:title" content="SubBot · Pay your bills with G$"/>
-<meta property="og:description" content="Track subscriptions. Pay airtime, data, electricity and TV with G$. Bills that pay themselves."/>
+<title>SubBot · Track every subscription</title>
+<meta name="description" content="SubBot keeps all your subscriptions in one place, warns you before each renewal and finds the ones you forgot. Pay the rest with G$."/>
+<meta property="og:title" content="SubBot · Track every subscription"/>
+<meta property="og:description" content="All your subscriptions in one place. Renewal alerts, a spend audit, and bills paid with G$."/>
 <meta property="og:image" content="https://subbotai.xyz/icon-512.png"/>
 <meta name="theme-color" content="#f1efe9"/>
 <link rel="icon" type="image/svg+xml" href="favicon.svg"/>
@@ -99,6 +99,13 @@
   .ticket .row:last-child { border-bottom: 0; }
   .ticket .ok { color: var(--ok); font-weight: 600; }
   .ticket .amt { font-weight: 600; }
+  .hero .ticket .row { display: grid; grid-template-columns: 1fr auto 6.5em; }
+  .hero .ticket .row .amt { text-align: right; }
+  .hero .ticket .row span:nth-child(2) { color: var(--muted); }
+  .hero .ticket .due { color: var(--accent) !important; }
+  .hero .ticket .flag { color: var(--accent) !important; }
+  .hero .ticket .total { border-top: 1px solid var(--ink); border-bottom: 0; margin-top: 6px; padding-top: 12px; font-weight: 600; }
+  @media (max-width: 420px) { .ticket { font-size: 13px; padding: 18px; } }
 
   .trust { display: grid; gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 16px; overflow: hidden; margin-top: 36px; }
   @media (min-width: 760px) { .trust { grid-template-columns: repeat(3, 1fr); } }
@@ -132,40 +139,34 @@
   <div class="hero dot-grid rule-b">
     <div class="wrap">
       <div>
-        <p class="label">For GoodDollar users in Nigeria</p>
-        <h1>Every bill,<br/>paid in <span>G$</span>.</h1>
-        <p class="lede">SubBot keeps track of your subscriptions and pays airtime, data, electricity and TV straight from your GoodDollar wallet. Set money aside in jars and your bills pay themselves on the due day.</p>
+        <p class="label">Subscription manager</p>
+        <h1>Know every<br/>subscription<br/>you <span>pay for</span>.</h1>
+        <p class="lede">SubBot keeps all your subscriptions in one place, warns you before each renewal and finds the ones you forgot about. Cancel what you don't use and pay the rest with G$.</p>
         <div class="ctas">
-          <a class="btn btn-act" href="/app">Open SubBot</a>
+          <a class="btn btn-act" href="/app">Start tracking</a>
           <a class="btn btn-line" href="#how">How it works</a>
         </div>
       </div>
-      <img class="art-plate" src="art/rooftop.webp" alt="A Lagos rooftop with a satellite dish, a prepaid meter and a phone"/>
+      <div class="ticket" aria-label="Example subscription list">
+        <p class="label" style="margin:0 0 10px">Next up · example</p>
+        <div class="row"><span>Netflix</span><span class="due">in 2 days</span><span class="amt">₦4,400</span></div>
+        <div class="row"><span>Spotify</span><span>in 6 days</span><span class="amt">₦1,300</span></div>
+        <div class="row"><span>DStv Compact</span><span>in 9 days</span><span class="amt">₦15,700</span></div>
+        <div class="row"><span>iCloud+ 50GB</span><span>in 14 days</span><span class="amt">₦1,100</span></div>
+        <div class="row"><span>Canva Pro</span><span class="flag">price up 25%</span><span class="amt">₦5,000</span></div>
+        <div class="row total"><span>This month</span><span></span><span class="amt">₦27,500</span></div>
+      </div>
     </div>
   </div>
 
-  <section>
-    <div class="wrap">
-      <p class="label">Pay with G$</p>
-      <h2>The bills you already pay.</h2>
-      <p class="sub">Quotes are in naira and G$ before you pay. Tokens and receipts land in the app the moment the payment clears.</p>
-      <div class="bills">
-        <div class="bill"><img class="spot" src="art/spots/phone.webp" alt=""/><h3>Airtime</h3><p>MTN, Airtel, Glo, 9mobile</p></div>
-        <div class="bill"><img class="spot" src="art/spots/kiosk.webp" alt=""/><h3>Data</h3><p>Daily, weekly and monthly bundles</p></div>
-        <div class="bill"><img class="spot" src="art/spots/meter.webp" alt=""/><h3>Electricity</h3><p>Prepaid tokens for 12 DisCos</p></div>
-        <div class="bill"><img class="spot" src="art/spots/tv.webp" alt=""/><h3>TV</h3><p>DStv, GOtv, StarTimes</p></div>
-      </div>
-    </div>
-  </section>
-
-  <section id="how" class="rule-t">
+  <section id="how">
     <div class="wrap">
       <p class="label">How it works</p>
-      <h2>Claim, set aside, forget.</h2>
+      <h2>Add, get warned, cut.</h2>
       <div class="steps">
-        <div class="step"><p class="n">01</p><img class="spot" src="art/spots/claim.webp" alt=""/><h3>Claim your G$</h3><p>Claim your daily GoodDollar income right inside SubBot. It goes to your own wallet.</p></div>
-        <div class="step"><p class="n">02</p><img class="spot" src="art/spots/jar.webp" alt=""/><h3>Fill a bill jar</h3><p>Make a jar for each bill, like DStv or your NEPA meter. SubBot shows how much is set aside and how much is still short.</p></div>
-        <div class="step"><p class="n">03</p><img class="spot" src="art/spots/receipt.webp" alt=""/><h3>It pays on time</h3><p>Turn on autopay and the bill is paid on the due day, once per cycle. You get the token and the receipt.</p></div>
+        <div class="step"><p class="n">01</p><img class="spot" src="art/spots/search.webp" alt=""/><h3>Add your subscriptions</h3><p>Type them in, or upload a bank statement and SubBot finds the charges that repeat.</p></div>
+        <div class="step"><p class="n">02</p><img class="spot" src="art/spots/phone.webp" alt=""/><h3>Get warned before renewals</h3><p>A notification before every charge, so nothing renews without you knowing.</p></div>
+        <div class="step"><p class="n">03</p><img class="spot" src="art/spots/unplugged.webp" alt=""/><h3>Cut what you don't use</h3><p>The audit shows duplicates, price hikes and free trials about to convert, with a link to cancel each one.</p></div>
       </div>
     </div>
   </section>
@@ -173,24 +174,32 @@
   <section class="rule-t">
     <div class="wrap split">
       <div>
-        <p class="label">Subscriptions</p>
+        <p class="label">Everything in one place</p>
         <h2>See where your money goes every month.</h2>
-        <p class="sub">Add Netflix, Spotify, iCloud or any service. SubBot reminds you before renewals and flags what you no longer use.</p>
+        <p class="sub">Netflix, Spotify, iCloud, your gym, your data plan. One list, one monthly total, in naira.</p>
         <ul class="list" style="margin-top:28px">
-          <li><span class="k">01</span><div><b>Renewal alerts</b><span>A heads-up before every charge, with push notifications.</span></div></li>
-          <li><span class="k">02</span><div><b>Spend audit</b><span>Find duplicates, price hikes and trials that are about to convert.</span></div></li>
-          <li><span class="k">03</span><div><b>Data forecast</b><span>Know when your bundle will run out and which plan fits how you use it.</span></div></li>
-          <li><span class="k">04</span><div><b>Bank statement import</b><span>Upload a CSV and SubBot finds the charges that repeat.</span></div></li>
-          <li><span class="k">05</span><div><b>Email receipts <span class="soon">Coming soon</span></b><span>Find subscriptions from the receipts in your inbox.</span></div></li>
+          <li><span class="k">01</span><div><b>Renewal alerts</b><span>Push notifications before every charge.</span></div></li>
+          <li><span class="k">02</span><div><b>Spend audit</b><span>Duplicates, price hikes and trials about to convert.</span></div></li>
+          <li><span class="k">03</span><div><b>Budget</b><span>Set a monthly limit and get told when you cross it.</span></div></li>
+          <li><span class="k">04</span><div><b>Data forecast</b><span>Know when your bundle will run out and which plan fits how you use it.</span></div></li>
+          <li><span class="k">05</span><div><b>Bank statement import</b><span>Upload a CSV and SubBot finds the charges that repeat.</span></div></li>
+          <li><span class="k">06</span><div><b>Email receipts <span class="soon">Coming soon</span></b><span>Find subscriptions from the receipts in your inbox.</span></div></li>
         </ul>
       </div>
-      <div class="ticket" aria-label="Example receipt">
-        <p class="label" style="margin:0 0 10px">Receipt</p>
-        <div class="row"><span>Bill</span><span>DStv Compact</span></div>
-        <div class="row"><span>Smartcard</span><span>••••4821</span></div>
-        <div class="row"><span>Amount</span><span class="amt">₦15,700</span></div>
-        <div class="row"><span>Paid from</span><span>DStv jar · autopay</span></div>
-        <div class="row"><span>Status</span><span class="ok">Paid</span></div>
+      <img class="art-plate" src="art/rooftop.webp" alt="A Lagos rooftop with a satellite dish, a prepaid meter and a phone"/>
+    </div>
+  </section>
+
+  <section class="rule-t">
+    <div class="wrap">
+      <p class="label">When it's time to pay</p>
+      <h2>Pay your bills with G$.</h2>
+      <p class="sub">Claim your daily GoodDollar income in SubBot and pay airtime, data, electricity and TV from your wallet. Set money aside in a jar for each bill and turn on autopay to have it paid on the due day.</p>
+      <div class="bills">
+        <div class="bill"><img class="spot" src="art/spots/tv.webp" alt=""/><h3>TV</h3><p>DStv, GOtv, StarTimes</p></div>
+        <div class="bill"><img class="spot" src="art/spots/meter.webp" alt=""/><h3>Electricity</h3><p>Prepaid tokens for 12 DisCos</p></div>
+        <div class="bill"><img class="spot" src="art/spots/kiosk.webp" alt=""/><h3>Data</h3><p>Daily, weekly and monthly bundles</p></div>
+        <div class="bill"><img class="spot" src="art/spots/jar.webp" alt=""/><h3>Bill jars</h3><p>Set aside G$ and pay on the due day</p></div>
       </div>
     </div>
   </section>
@@ -200,17 +209,17 @@
       <p class="label">Your money, your keys</p>
       <h2>You stay in control.</h2>
       <div class="trust">
-        <div><b>Your own wallet</b><p>G$ stays in your wallet until a bill is paid. SubBot never holds your keys.</p></div>
+        <div><b>Nothing is charged for you</b><p>SubBot tracks and reminds. You decide what to cancel and what to pay.</p></div>
         <div><b>A limit you set</b><p>Autopay only spends up to the allowance you approve. Stop it at any time with one tap.</p></div>
-        <div><b>Every payment on record</b><p>Each payment has an on-chain transaction and a receipt you can check.</p></div>
+        <div><b>Your own wallet</b><p>G$ stays in your wallet until a bill is paid, and every payment has a receipt.</p></div>
       </div>
     </div>
   </section>
 
   <div class="cta-band dot-grid rule-t">
     <div class="wrap">
-      <h2>Put your bills on autopay.</h2>
-      <div class="ctas"><a class="btn btn-act" href="/app">Open SubBot</a></div>
+      <h2>Stop paying for what you don't use.</h2>
+      <div class="ctas"><a class="btn btn-act" href="/app">Start tracking</a></div>
     </div>
   </div>
 </main>
