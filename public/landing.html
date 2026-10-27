@@ -75,6 +75,13 @@
   .bill img { width: 88px; height: 88px; object-fit: contain; }
   .bill h3 { font-size: 18px; font-weight: 600; margin: 14px 0 2px; }
   .bill p { margin: 0; font-size: 14px; color: var(--muted); }
+  a.bill, a.row { color: inherit; text-decoration: none; }
+  a.bill:hover { background: var(--card); }
+  a.bill:hover h3::after { content: ' →'; color: var(--accent); }
+  .hero a.row { margin: 0 -10px; padding-left: 10px; padding-right: 10px; border-radius: 8px; }
+  .hero a.row:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+  .hero a.row:active, a.bill:active { transform: scale(.99); }
+  @media (prefers-reduced-motion: reduce) { .hero a.row:active, a.bill:active { transform: none; } }
 
   .steps { display: grid; gap: 16px; margin-top: 36px; }
   @media (min-width: 760px) { .steps { grid-template-columns: repeat(3, 1fr); } }
@@ -153,11 +160,11 @@
       </div>
       <div class="ticket" aria-label="Example list of subscriptions and bills">
         <p class="label" style="margin:0 0 10px">Next up · example</p>
-        <div class="row"><span class="nm">MTN data 10GB<small class="due">runs out in 2 days</small></span><span class="amt">₦4,500</span><span class="act"><span class="pay">Pay G$</span></span></div>
-        <div class="row"><span class="nm">Netflix<small>renews in 3 days</small></span><span class="amt">₦4,400</span><span class="act"></span></div>
-        <div class="row"><span class="nm">Spotify<small>renews in 6 days</small></span><span class="amt">₦1,300</span><span class="act"></span></div>
-        <div class="row"><span class="nm">DStv Compact<small>due in 9 days · jar full</small></span><span class="amt">₦15,700</span><span class="act"><span class="auto">Autopay</span></span></div>
-        <div class="row"><span class="nm">Canva Pro<small class="due">price up 25%</small></span><span class="amt">₦5,000</span><span class="act"></span></div>
+        <a class="row" href="/app#pay/data"><span class="nm">MTN data 10GB<small class="due">runs out in 2 days</small></span><span class="amt">₦4,500</span><span class="act"><span class="pay">Pay G$</span></span></a>
+        <a class="row" href="/app#subs"><span class="nm">Netflix<small>renews in 3 days</small></span><span class="amt">₦4,400</span><span class="act"></span></a>
+        <a class="row" href="/app#subs"><span class="nm">Spotify<small>renews in 6 days</small></span><span class="amt">₦1,300</span><span class="act"></span></a>
+        <a class="row" href="/app#jars"><span class="nm">DStv Compact<small>due in 9 days · jar full</small></span><span class="amt">₦15,700</span><span class="act"><span class="auto">Autopay</span></span></a>
+        <a class="row" href="/app#subs"><span class="nm">Canva Pro<small class="due">price up 25%</small></span><span class="amt">₦5,000</span><span class="act"></span></a>
         <div class="row total"><span class="nm">This month</span><span class="amt">₦30,900</span><span class="act"></span></div>
       </div>
     </div>
@@ -181,10 +188,10 @@
       <h2>Airtime, data, TV and light, paid in G$.</h2>
       <p class="sub">Claim your daily GoodDollar income in SubBot and pay airtime, data, electricity and TV from your wallet. Set money aside in a jar for each bill and turn on autopay to have it paid on the due day.</p>
       <div class="bills">
-        <div class="bill"><img class="spot" src="art/spots/phone.webp" alt=""/><h3>Airtime</h3><p>MTN, Airtel, Glo, 9mobile</p></div>
-        <div class="bill"><img class="spot" src="art/spots/kiosk.webp" alt=""/><h3>Data</h3><p>Daily, weekly and monthly bundles</p></div>
-        <div class="bill"><img class="spot" src="art/spots/tv.webp" alt=""/><h3>TV</h3><p>DStv, GOtv, StarTimes</p></div>
-        <div class="bill"><img class="spot" src="art/spots/meter.webp" alt=""/><h3>Electricity</h3><p>Prepaid tokens for 12 DisCos</p></div>
+        <a class="bill" href="/app#pay/airtime"><img class="spot" src="art/spots/phone.webp" alt=""/><h3>Airtime</h3><p>MTN, Airtel, Glo, 9mobile</p></a>
+        <a class="bill" href="/app#pay/data"><img class="spot" src="art/spots/kiosk.webp" alt=""/><h3>Data</h3><p>Daily, weekly and monthly bundles</p></a>
+        <a class="bill" href="/app#pay/tv"><img class="spot" src="art/spots/tv.webp" alt=""/><h3>TV</h3><p>DStv, GOtv, StarTimes</p></a>
+        <a class="bill" href="/app#pay/electricity"><img class="spot" src="art/spots/meter.webp" alt=""/><h3>Electricity</h3><p>Prepaid tokens for 12 DisCos</p></a>
       </div>
     </div>
   </section>

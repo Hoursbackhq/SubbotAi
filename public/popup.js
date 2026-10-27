@@ -788,6 +788,7 @@ async function openWeb3AuthModal() {
     track('login', { method: payload.verifier || 'web3auth', email: info.email || '', userId: state.userId });
     const gotData = await fetchUserData(false);
     showScreen('dashboard');
+    openDeepLink();
     if (gotData) {
       toast('Welcome back!');
     } else {
@@ -954,6 +955,21 @@ function toast(msg) {
 }
 
 // ── Router ────────────────────────────────────────────────────────────────
+// Links from the landing page: /app#pay/data opens that bill, #jars the jars, #subs the list
+let deepLink = location.hash.slice(1);
+function openDeepLink() {
+  if (!deepLink) return;
+  const [where, cat] = deepLink.split('/');
+  deepLink = '';
+  history.replaceState(null, '', location.pathname);
+  if (where === 'subs') showScreen('subscriptions');
+  if (where === 'pay' || where === 'jars') {
+    showScreen('credits');
+    if (where === 'jars') setTimeout(() => document.getElementById('jars-list')?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 300);
+    else if (['airtime', 'data', 'electricity', 'tv'].includes(cat)) setTimeout(() => openBill(cat), 300);
+  }
+}
+
 const ONBOARDING = new Set(['welcome', 'setup']);
 
 function showScreen(name) {
@@ -2013,6 +2029,7 @@ async function init() {
     renderW3AStatus(w3a);
     fetchUserData().catch(() => {});
     showScreen('dashboard');
+    openDeepLink();
     if (w3a.walletAddress) checkGDStatus(w3a.walletAddress).catch(() => {});
   } else {
     // Not connected — show welcome, then open Web3Auth modal once SDK is ready

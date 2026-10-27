@@ -1,4 +1,4 @@
-const CACHE_NAME = 'subbot-v15';
+const CACHE_NAME = 'subbot-v16';
 const SHELL_ASSETS = [
   '/',
   '/app',
